@@ -1,40 +1,55 @@
-import requests
+import urllib.parse
+import os
 from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel
-from PyPDF2 import PdfReader
-from io import BytesIO
-from fastapi.middleware.cors import CORSMiddleware
+import PyPDF2
+from database import Database
 
 router = APIRouter()
 
-class PDFRequest(BaseModel):
-    url: str
+# MySQL 데이터베이스 연결 설정
+db_config = {
+    'host': '127.0.0.1',
+    'user': 'nlrunner',
+    'password': 'nlrunner',
+    'database': 'nlrunner_db'
+}
+db = Database(**db_config)
+db.connect()
+db.create_table()
+
+class PDFUrl(BaseModel):
+    url: str  # pdf_path에서 url로 변경
+
+def extract_text_from_local_pdf(pdf_url: str) -> str:
+    # URL 디코딩
+    decoded_path = urllib.parse.unquote(pdf_url)
+    
+    # 파일 프로토콜 제거
+    if decoded_path.startswith("file:///"):
+        decoded_path = decoded_path[8:]
+    
+    # 경로 구분자 변경
+    decoded_path = decoded_path.replace("/", os.path.sep)
+    
+    if not os.path.exists(decoded_path):
+        raise FileNotFoundError(f"File not found: {decoded_path}")
+    
+    with open(decoded_path, 'rb') as file:
+        reader = PyPDF2.PdfReader(file)
+        text = ""
+        for page in reader.pages:
+            text += page.extract_text()
+    
+    return text
 
 @router.post("/pdf_text")
-async def extract_text(request: PDFRequest):
+async def extract_local_pdf(pdf_url: PDFUrl):
     try:
-        # PDF 다운로드
-        response = requests.get(request.url)
-        response.raise_for_status()  # 오류 발생 시 예외 발생
-        pdf_content = BytesIO(response.content)
-
-        # PyPDF2를 사용하여 텍스트 추출
-        reader = PdfReader(pdf_content)
-        text = ""
-        for page_num in range(len(reader.pages)):
-            page = reader.pages[page_num]
-            text += page.extract_text() or ""  # None 타입일 경우 빈 문자열로 처리
-
-        # 메타데이터 추출 (가능한 경우)
-        metadata = reader.metadata
-        title = metadata.get('/Title', 'Unknown')
-        author = metadata.get('/Author', 'Unknown')
-
-        return {
-            "success": True,
-            "title": title,
-            "author": author,
-            "text": text
-        }
+        extracted_text = extract_text_from_local_pdf(pdf_url.url)
+        pdf_id = db.insert_pdf(pdf_url.url,extracted_text)
+        return {"success": True, "text": extracted_text}  # success 필드 추가
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
