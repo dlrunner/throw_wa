@@ -30,7 +30,7 @@ class Database:
         try:
             self.cursor.execute('''CREATE TABLE IF NOT EXISTS test_table
                                   (id INT AUTO_INCREMENT PRIMARY KEY,
-                                   url VARCHAR(255),
+                                   url TEXT,
                                     title TEXT,
                                    content TEXT)''')
             self.conn.commit()
@@ -62,9 +62,9 @@ class Database:
             self.conn.rollback()
             raise
 
-    def insert_pdf(self, url, content) :
+    def insert_pdf(self, pdf_url, content) :
         try:
-            self.cursor.execute("INSERT INTO test_table (url, content) VALUES (%s, %s)",(url, content))
+            self.cursor.execute("INSERT INTO test_table (url, content) VALUES (%s, %s)",(pdf_url, content))
             self.conn.commit()
             pdf_id = self.cursor.lastrowid
             return pdf_id
