@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login</title>
+  <link rel="stylesheet" href="/chrome_extension/extension/style.css">
+</head>
+
+<body>
+  <div class="container" id="login-container">
+    <h1>Login</h1>
+    <form id="login-form">
+      <label for="username">Username:</label>
+      <input type="text" id="username" name="username" required>
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" required>
+      <button type="submit">Login</button>
+    </form>
+    <div id="message"></div>
+    <h1>Google Login</h1>
+    <button id="login-button">Login with Google</button>
+    <div id="message2"></div>
+  </div>
+
+  <div class="container" id="logout-container" style="display: none;">
+    <h1>Welcome</h1>
+    <button id="logout-button">Logout</button>
+    <button id="scrap-button">Scrap</button>
+    <button id="capture-button">Capture</button>
+    <button id="link-button">Link</button>
+  </div>
+
+  <script src="/chrome_extension/extension/index.js"></script>
+</body>
+
+</html>
