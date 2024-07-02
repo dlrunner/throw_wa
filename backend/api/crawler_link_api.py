@@ -70,3 +70,8 @@ async def add_bookmark(bookmark: Bookmark):
         "embedding" : embedding
     }
 
+# call_crawler 함수 정의
+async def call_crawler(link : str) :
+    request = Bookmark(url=link)
+    return await add_bookmark(request)
+

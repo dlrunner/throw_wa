@@ -58,7 +58,7 @@ def embed_text(text: str) -> list :
     return embeddings.detach().numpy().tolist()
 
 
-
+# 엔드포인트
 @router.post("/pdf_text")
 async def extract_local_pdf(pdf_url: PDFUrl):
     try:
@@ -70,3 +70,8 @@ async def extract_local_pdf(pdf_url: PDFUrl):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+# call_pdf 함수 정의
+async def call_pdf(link:str):
+    request = PDFUrl(url=link)
+    return await extract_local_pdf(request)

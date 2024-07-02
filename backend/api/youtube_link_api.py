@@ -80,8 +80,7 @@ def embed_text(text: str) -> list :
     embeddings = torch.mean(outputs.last_hidden_state, dim=1)
     return embeddings.detach().numpy().tolist()
 
-
-
+# 엔드포인트
 @router.post("/youtube_text")
 async def transcribe(request: TranscribeRequest):
     try:
@@ -90,3 +89,8 @@ async def transcribe(request: TranscribeRequest):
         return {"success": True, "content": result, "video_id": video_id, "embedding" : embedding}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
+# call_youtube 엔드포인트
+async def call_youtube(link : str):
+    request = TranscribeRequest(url=link)
+    return await transcribe(request)
