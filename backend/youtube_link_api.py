@@ -9,6 +9,8 @@ import faiss
 from sentence_transformers import SentenceTransformer
 import numpy as np
 from database import Database
+from transformers import BertTokenizer, BertModel, AutoModel, AutoTokenizer
+import torch
 
 router = APIRouter()
 
@@ -27,13 +29,7 @@ db = Database(**db_config)
 db.connect()
 db.create_table()
 
-# # Faiss 벡터 데이터베이스 초기화
-# dimension = 384  # sentence-transformers 'distiluse-base-multilingual-cased-v1' 모델의 임베딩 차원
-# index = faiss.IndexFlatL2(dimension)
-
-# # 임베딩 모델 로드
-# model = SentenceTransformer('distiluse-base-multilingual-cased-v1')
-
+# 유튜브 오디오 다운로드 함수 pip install yt_dlp 설치 필요
 def download_audio(youtube_url, output_path):
     ydl_opts = {
         'format': 'bestaudio/best',
@@ -48,11 +44,13 @@ def download_audio(youtube_url, output_path):
         ydl.download([youtube_url])
     print(f"Downloaded audio to {output_path}")
 
+# 오디오 -> 텍스트 추출 pip install openai-whiper 설치 필요
 def transcribe_audio(audio_path, language="ko"):
     model = whisper.load_model("small")
     result = model.transcribe(audio_path, language=language)
     return result["text"]
 
+# 다운 받은 오디오 파일을 복사 후 mp3형태로 whiper로 텍스트 추출후 복사 된 파일 삭제 내용은 디비에 저장
 def process_youtube_link(youtube_url, language="ko"):
     audio_path = "temp_audio"
     actual_audio_path = audio_path + ".mp3"
@@ -69,16 +67,26 @@ def process_youtube_link(youtube_url, language="ko"):
     # MySQL에 링크와 전사 텍스트 저장
     video_id = db.insert_video(youtube_url, content)
 
-    # # 전사 텍스트를 임베딩하여 Faiss에 저장
-    # embedding = model.encode([transcription])[0]
-    # index.add(np.array([embedding]))
-
     return content, video_id
+
+# 임베딩 함수
+def embed_text(text: str) -> list :
+    tokenizer = AutoTokenizer.from_pretrained('klue/bert-base') # 모델은 transformers의 klue/bert-base 영어 한국어 지원 모델
+    model = AutoModel.from_pretrained('klue/bert-base')         # pip install transformers torch 설치 필요
+
+    inputs = tokenizer(text, return_tensors='pt', truncation=True, padding=True, max_length=512)
+    outputs = model(**inputs)
+
+    embeddings = torch.mean(outputs.last_hidden_state, dim=1)
+    return embeddings.detach().numpy().tolist()
+
+
 
 @router.post("/youtube_text")
 async def transcribe(request: TranscribeRequest):
     try:
         result, video_id = process_youtube_link(request.url, request.language)
-        return {"success": True, "content": result, "video_id": video_id}
+        embedding = embed_text(result)
+        return {"success": True, "content": result, "video_id": video_id, "embedding" : embedding}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
