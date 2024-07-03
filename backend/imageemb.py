@@ -1,45 +1,56 @@
+# imageemb.py
+
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from transformers import CLIPProcessor, CLIPModel
 import torch
 from PIL import Image
 import requests
-import matplotlib.pyplot as plt
-from transformers import CLIPProcessor, CLIPModel
+from io import BytesIO
+
+router = APIRouter()
 
 # CLIP 모델 및 프로세서 로드
-model_name = "openai/clip-vit-large-patch14-336"
+model_name = "openai/clip-vit-base-patch32"
 model = CLIPModel.from_pretrained(model_name)
 processor = CLIPProcessor.from_pretrained(model_name)
 
-# 이미지 URL 및 로드
-image_url = "https://raw.githubusercontent.com/pytorch/hub/master/images/dog.jpg"
-image = Image.open(requests.get(image_url, stream=True).raw)
+class ImageEmbRequest(BaseModel):
+    image_url: str
+    candidate_labels: list[str]
 
-# 이미지 전처리
-inputs = processor(images=image, return_tensors="pt")
+@router.post("/image_embedding")
+async def get_image_embedding(request: ImageEmbRequest):
+    try:
+        # 이미지 URL에서 이미지 로드
+        response = requests.get(request.image_url)
+        image = Image.open(BytesIO(response.content))
 
-# 이미지 임베딩 생성
-with torch.no_grad():
-    image_features = model.get_image_features(**inputs)
+        # 입력 데이터 전처리
+        inputs = processor(text=request.candidate_labels, images=image, return_tensors="pt", padding=True)
 
-# 임베딩 정보 출력
-print("이미지 임베딩 shape:", image_features.shape)
-print("이미지 임베딩 (처음 5개 값):", image_features[0, :5].tolist())
+        # 모델 예측
+        with torch.no_grad():
+            outputs = model(**inputs)
 
-# 이미지 임베딩 시각화
-plt.figure(figsize=(10, 5))
-plt.imshow(image_features.numpy().reshape(-1, 16), cmap='viridis', aspect='auto')
-plt.colorbar()
-plt.title("Image Embedding Visualization")
-plt.xlabel("Embedding Dimensions")
-plt.ylabel("Flattened Embedding")
-plt.show()
+        # 텍스트 및 이미지 임베딩 추출
+        text_embeds = outputs.text_embeds
+        image_embeds = outputs.image_embeds
 
-# 원본 이미지 표시
-plt.figure(figsize=(8, 8))
-plt.imshow(image)
-plt.axis('off')
-plt.title("Original Image")
-plt.show()
+        # 유사도 계산
+        similarity = torch.nn.functional.cosine_similarity(image_embeds, text_embeds)
 
-# 임베딩 정규화 (선택적)
-normalized_embedding = torch.nn.functional.normalize(image_features, p=2, dim=1)
-print("정규화된 임베딩 (처음 5개 값):", normalized_embedding[0, :5].tolist())
+        # 이미지 임베딩
+        image_embedding = image_embeds.squeeze().numpy().tolist()
+
+        # 결과 준비
+        results = {
+            "similarities": similarity.numpy().tolist(),
+            "best_label": request.candidate_labels[similarity.argmax().item()],
+            "best_score": similarity.max().item(),
+            "image_embedding": image_embedding
+        }
+
+        return results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
