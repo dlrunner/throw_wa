@@ -8,7 +8,7 @@ import mysql.connector
 import faiss
 from sentence_transformers import SentenceTransformer
 import numpy as np
-from database import Database
+from database.database import Database
 from transformers import BertTokenizer, BertModel, AutoModel, AutoTokenizer
 import torch
 

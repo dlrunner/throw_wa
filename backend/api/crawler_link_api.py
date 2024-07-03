@@ -6,7 +6,7 @@ import mysql.connector
 from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel
 import pickle
-from database import Database
+from database.database import Database
 
 router = APIRouter()
 
