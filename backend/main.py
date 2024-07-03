@@ -1,10 +1,11 @@
-from fastapi import FastAPI, HTTPException
+import re
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sentence_transformers import SentenceTransformer
 import numpy as np
-from youtube_link_api import router as youtube_router
-from pdf_link_api import router as pdf_router
-from crawler_link_api import router as crawler_router
+from api.youtube_link_api import router as youtube_router
+from api.pdf_link_api import router as pdf_router
+from api.crawler_link_api import router as crawler_router
 
 app = FastAPI()
 
