@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-from transformers import BertTokenizer, BertModel, AutoTokenizer, AutoModel
+from transformers import CLIPProcessor, CLIPModel
 import torch
 import mysql.connector
 from fastapi import FastAPI, HTTPException, APIRouter
@@ -30,7 +30,7 @@ vector_db = VectorDatabase(
     dimension=768
 )
 
-# 크롤링 함수 (각 사이트마다 html 태그가 다름 따라서 사이트 별 태그 분석 후 모듈화 필요)
+# 크롤링 함수
 def crawl_data(url):
     response = requests.get(url)
     if response.status_code == 200:
@@ -41,6 +41,10 @@ def crawl_data(url):
     else:
         return None, None
 
+# CLIP 모델 및 프로세서 로드
+model_name = "openai/clip-vit-base-patch32"
+processor = CLIPProcessor.from_pretrained(model_name)
+model = CLIPModel.from_pretrained(model_name)
 
 # 임베딩 함수
 def embed_text(text: str) -> list :
@@ -83,8 +87,8 @@ async def add_bookmark(bookmark: Bookmark):
         "url": url,
         "title": title,
         "content_length": len(content),
-        "content" : content,
-        "embedding" : embedding
+        "content": content,
+        "embedding": embedding
     }
 
 # call_crawler 함수 정의
