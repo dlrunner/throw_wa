@@ -1,13 +1,13 @@
 from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel
-from transformers import AutoTokenizer, AutoModel
+from transformers import CLIPProcessor, CLIPModel
 import torch
 import pinecone
 import numpy as np
 
 class QueryRequest(BaseModel):
     text: str
-    top_k: int = 3
+    top_k: int = 6
 
 router = APIRouter()
 
@@ -22,7 +22,7 @@ index_name = 'vector'
 if index_name not in pc.list_indexes().names():
     pc.create_index(
         name=index_name,
-        dimension=768,  # BERT 임베딩 벡터의 차원
+        dimension=768,  # clip 임베딩 벡터의 차원
         metric='cosine',  # 유사도 측정 방법
         spec=pinecone.ServerlessSpec(
             cloud='aws',
@@ -32,16 +32,18 @@ if index_name not in pc.list_indexes().names():
 
 index = pc.Index(index_name)
 
+# CLIP 모델 및 프로세서 로드
+clip_model_name = "openai/clip-vit-large-patch14"
+clip_model = CLIPModel.from_pretrained(clip_model_name)
+clip_processor = CLIPProcessor.from_pretrained(clip_model_name)
+
 # 텍스트 임베딩 함수
 def embed_text(text: str) -> list:
-    tokenizer = AutoTokenizer.from_pretrained('klue/bert-base')
-    model = AutoModel.from_pretrained('klue/bert-base')
-    
-    inputs = tokenizer(text, return_tensors='pt', truncation=True, padding=True, max_length=512)
-    outputs = model(**inputs)
-    
-    embeddings = torch.mean(outputs.last_hidden_state, dim=1).squeeze().detach().numpy().astype(np.float32).tolist()
-    return embeddings
+    inputs = clip_processor(text=[text], return_tensors="pt", padding=True, truncation=True)
+    with torch.no_grad():
+        text_features = clip_model.get_text_features(**inputs)
+    embedding = text_features.squeeze().cpu().numpy().tolist()
+    return embedding
 
 @router.post("/search")
 async def search(request: QueryRequest):

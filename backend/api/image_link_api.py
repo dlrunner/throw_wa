@@ -6,6 +6,8 @@ from PIL import Image
 import requests
 from io import BytesIO
 from database.database import Database
+from database.vector_db import VectorDatabase
+import numpy as np
 
 router = APIRouter()
 
@@ -20,6 +22,14 @@ db = Database(**db_config)
 db.connect()
 db.create_table()
 
+# 백터 데이터베이스 설정a
+vector_db = VectorDatabase(
+    api_key="a662c43c-d2dd-4e2d-b187-604b1cf9414c",
+    environment="us-east-1",
+    index_name="vector",
+    dimension=768
+)
+
 # CLIP 모델 및 프로세서 로드
 clip_model_name = "openai/clip-vit-large-patch14"
 clip_model = CLIPModel.from_pretrained(clip_model_name)
@@ -32,8 +42,7 @@ blip_model = BlipForConditionalGeneration.from_pretrained(blip_model_name)
 
 class ImageEmbRequest(BaseModel):
     image_url: str
-    candidate_labels: list[str] = []
-
+    
 @router.post("/image_embedding")
 async def get_image_embedding(request: ImageEmbRequest):
     try:
@@ -45,43 +54,43 @@ async def get_image_embedding(request: ImageEmbRequest):
         blip_inputs = blip_processor(image, return_tensors="pt")
         caption_ids = blip_model.generate(**blip_inputs)
         caption = blip_processor.batch_decode(caption_ids, skip_special_tokens=True)[0]
-        
-        # 입력 데이터 전처리
-        clip_inputs = clip_processor(text=[caption], images=[image], return_tensors="pt", padding=True)
 
-        # 모델 예측
+        # CLIP을 사용한 이미지 임베딩
+        clip_image_inputs = clip_processor(images=[image], return_tensors="pt", padding=True)
         with torch.no_grad():
-            outputs = clip_model(**clip_inputs)
+            clip_image_outputs = clip_model.get_image_features(**clip_image_inputs)
+        image_embedding = clip_image_outputs.squeeze().cpu().numpy()
 
-        # 텍스트 및 이미지 임베딩 추출
-        text_embeds = outputs.text_embeds
-        image_embeds = outputs.image_embeds
+        # CLIP을 사용한 텍스트 임베딩
+        clip_text_inputs = clip_processor(text=[caption], return_tensors="pt", padding=True)
+        with torch.no_grad():
+            clip_text_outputs = clip_model.get_text_features(**clip_text_inputs)
+        text_embedding = clip_text_outputs.squeeze().cpu().numpy()
 
-        # 유사도 계산
-        similarity = torch.nn.functional.cosine_similarity(image_embeds, text_embeds)
-
-        # 이미지 임베딩
-        image_embedding = image_embeds.squeeze().numpy().tolist()
-
-        # 가장 유사한 텍스트와 점수
-        best_label = caption
-        best_score = similarity.item()
-
-        # 각 레이블에 대한 유사도 점수 딕셔너리 생성
-        label_similarities = {caption: best_score}
+        # 유사도 계산 (numpy를 사용하여 계산)
+        similarity = np.dot(image_embedding, text_embedding) / (np.linalg.norm(image_embedding) * np.linalg.norm(text_embedding))
 
         # 데이터베이스에 결과 저장
-        db.insert_image(request.image_url, caption)
+        image_id = db.insert_image(request.image_url, caption)
+
+        # 벡터 디비에 upsert
+        vector_db.upsert_vector(
+        vector_id=str(image_id),
+        vector=text_embedding,
+        metadata={"link": request.image_url}
+    )
 
         # 결과 준비
         results = {
             "image_url": request.image_url,
-            "best_label": best_label,
-            "best_score": best_score,
-            "label_similarities": label_similarities,
-            "image_embedding": image_embedding
+            "이미지 캡셔닝 결과": caption,
+            "이미지-텍스트 유사도": float(similarity),  # numpy.float32를 Python float로 변환
+            "이미지 임베딩값": image_embedding.tolist(),
+            "텍스트 임베딩값": text_embedding.tolist()
         }
 
+        print("모든 처리 완료")
         return results
     except Exception as e:
+        print(f"오류 발생: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
