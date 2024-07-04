@@ -7,6 +7,7 @@ from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel
 import pickle
 from database.database import Database
+from database.vector_db import VectorDatabase
 
 router = APIRouter()
 
@@ -20,6 +21,14 @@ db_config = {
 db = Database(**db_config)
 db.connect()
 db.create_table()
+
+# 백터 데이터베이스 설정
+vector_db = VectorDatabase(
+    api_key="a662c43c-d2dd-4e2d-b187-604b1cf9414c",
+    environment="us-east-1",
+    index_name="vector",
+    dimension=768
+)
 
 # 크롤링 함수 (각 사이트마다 html 태그가 다름 따라서 사이트 별 태그 분석 후 모듈화 필요)
 def crawl_data(url):
@@ -41,8 +50,9 @@ def embed_text(text: str) -> list :
     inputs = tokenizer(text, return_tensors='pt', truncation=True, padding=True, max_length=512)
     outputs = model(**inputs)
 
-    embeddings = torch.mean(outputs.last_hidden_state, dim=1)
-    return embeddings.detach().numpy().tolist()
+    # BERT 모델의 출력에서 평균을 구하여 리스트 형태로 변환
+    embeddings = torch.mean(outputs.last_hidden_state, dim=1).squeeze().detach().numpy().tolist()
+    return embeddings
 
 
 # Bookmark model
@@ -59,6 +69,13 @@ async def add_bookmark(bookmark: Bookmark):
 
     crawling_id = db.insert_crawling(url, title, content)
     embedding = embed_text(content)
+
+    # 벡터 디비에 upsert
+    vector_db.upsert_vector(
+        vector_id=str(crawling_id),
+        vector=embedding,
+        metadata={"source": url}
+    )
 
     return {
         "success": True,

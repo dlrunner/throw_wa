@@ -80,7 +80,7 @@ async def extract_local_pdf(pdf_url: PDFUrl):
         vector_db.upsert_vector(
             vector_id=str(pdf_id),
             vector=embedding,
-            metadata={"source": extracted_text}
+            metadata={"source": pdf_url.url}
         )
         return {"success": True, "text": extracted_text, "embedding": embedding}  # success 필드 추가 text embedding 
     except FileNotFoundError as e:

@@ -11,6 +11,7 @@ import numpy as np
 from database.database import Database
 from transformers import BertTokenizer, BertModel, AutoModel, AutoTokenizer
 import torch
+from database.vector_db import VectorDatabase
 
 router = APIRouter()
 
@@ -28,6 +29,14 @@ db_config = {
 db = Database(**db_config)
 db.connect()
 db.create_table()
+
+# 백터 데이터베이스 설정
+vector_db = VectorDatabase(
+    api_key="a662c43c-d2dd-4e2d-b187-604b1cf9414c",
+    environment="us-east-1",
+    index_name="vector",
+    dimension=768
+)
 
 # 유튜브 오디오 다운로드 함수 pip install yt_dlp 설치 필요
 def download_audio(youtube_url, output_path):
@@ -77,8 +86,9 @@ def embed_text(text: str) -> list :
     inputs = tokenizer(text, return_tensors='pt', truncation=True, padding=True, max_length=512)
     outputs = model(**inputs)
 
-    embeddings = torch.mean(outputs.last_hidden_state, dim=1)
-    return embeddings.detach().numpy().tolist()
+    # BERT 모델의 출력에서 평균을 구하여 리스트 형태로 변환
+    embeddings = torch.mean(outputs.last_hidden_state, dim=1).squeeze().detach().numpy().tolist()
+    return embeddings
 
 # 엔드포인트
 @router.post("/youtube_text")
@@ -86,6 +96,13 @@ async def transcribe(request: TranscribeRequest):
     try:
         result, video_id = process_youtube_link(request.url, request.language)
         embedding = embed_text(result)
+
+        # 백터 디비에 upsert
+        vector_db.upsert_vector(
+            vector_id = str(video_id),
+            vector= embedding,
+            metadata={"source" : request.url}
+        )
         return {"success": True, "content": result, "video_id": video_id, "embedding" : embedding}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
