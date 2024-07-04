@@ -30,9 +30,9 @@ class Database:
         try:
             self.cursor.execute('''CREATE TABLE IF NOT EXISTS test_table
                                   (id INT AUTO_INCREMENT PRIMARY KEY,
-                                   url VARCHAR(255),
+                                   url TEXT,
                                     title TEXT,
-                                   content TEXT)''')
+                                   content LONGTEXT)''')
             self.conn.commit()
             print("테이블 생성 성공")
         except Error as e :
@@ -62,9 +62,9 @@ class Database:
             self.conn.rollback()
             raise
 
-    def insert_pdf(self, url, content) :
+    def insert_pdf(self, pdf_url, content) :
         try:
-            self.cursor.execute("INSERT INTO test_table (url, content) VALUES (%s, %s)",(url, content))
+            self.cursor.execute("INSERT INTO test_table (url, content) VALUES (%s, %s)",(pdf_url, content))
             self.conn.commit()
             pdf_id = self.cursor.lastrowid
             return pdf_id
@@ -73,3 +73,13 @@ class Database:
             self.conn.rollback()
             raise
 
+    def insert_image(self, url, content):
+            try:
+                self.cursor.execute("INSERT INTO test_table (url, content) VALUES (%s, %s)", (url, content))
+                self.conn.commit()
+                image_id = self.cursor.lastrowid
+                return image_id
+            except Error as e:
+                print(f"이미지 삽입 에러: {e}")
+                self.conn.rollback()
+                raise
