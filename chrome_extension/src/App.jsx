@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import './App.css'
 import styled from 'styled-components';
-import KakaoLogin from './Components/KakaoLogin';
-import ChatWindow from './Components/ChatWindow';
-import NavBar from './Components/NavBar';
+import { Link, Route, Routes } from 'react-router-dom';
+import SignUp from './Components/SignUp';
+import KakaoLoginBtn from './Components/KakaoLoginBtn';
+import Home from './Components/Home';
 
 const Container = styled.div`
   display: flex;
@@ -12,14 +13,20 @@ const Container = styled.div`
 `;
 
 function App() {
+  const API_URL = import.meta.env.VITE_API_URL;
 
   return (
     <>
-      <KakaoLogin />
-      <Container>
-        <NavBar />
-        <ChatWindow />
-      </Container>
+    <nav>
+      <Link to="/signUp">signUp</Link>
+      <Link to="/login">login</Link>
+      <Link to="/home">home</Link>
+    </nav>
+      <Routes>
+        <Route path='/signUp' element={<SignUp />}></Route>
+        <Route path='/login' element={<KakaoLoginBtn />}></Route>
+        <Route path='/home' element={<Home />}></Route>
+      </Routes>
     </>
   )
 }

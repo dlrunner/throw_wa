@@ -4,26 +4,27 @@ import { useNavigate } from 'react-router-dom'
 const KakaoLoginHandler = (props) => {
   const navigate = useNavigate();
   const code = new URL(window.location.href).searchParams.get("code");
+  console.log(code);
 
-  // 인가코드 백으로 보내는 코드
+  // 인가코드 -> 백단
   useEffect(() => {
-    const kakaoLogin = async () => {
+    const kakaoLoginCertification = async () => {
       await axios({
         method: "GET",
-        url: `${OAuth.env.REDIRECT_URI}/?code=${code}`,
+        url: `${import.meta.env.VITE_API_URL}/oauth2/callback/kakao?code=${code}`,
         headers: {
-          "Content-Type": "application/json;charset=utf-8",
-          "Access-Control-Allow-Origin": "*" // CORS 에러 때문에 넣은 것, 해결 시 삭제할 것
-        }
+          "Content-Type": "application/json;charset=utf-8", // json형태로 데이터를 보내는 코드
+          "Access-Control-Allow-Origin": "*" // CORS 인증 코드, 프로젝트 url에 맞게 수정해야함
+        },
       }).then((res) => {
         console.log(res);
-        // 계속 쓸 정보들은 localStorage에 저장(ex: 이름)
+        // 로컬에 저장
         localStorage.setItem("name", res.data.account.kakaoName);
-        // 로그인 성공 시 이동할 페이지
-        navigate("/ThrowWa");
+        // 토큰도 받았겠다 로그인 됐으니 메인으로 화면 전환
+        navigate("/home")
       })
-    }
-    kakaoLogin();
+    };
+    kakaoLoginCertification()
   }, [props.history]);
 
   return (

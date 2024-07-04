@@ -1,7 +1,7 @@
 import React from 'react'
 import { KAKAO_AUTH_URL } from './OAuth/OAuth.js'
 
-const KakaoLogin = () => {
+const KakaoLoginBtn = () => {
 
   return (
     <>
@@ -16,4 +16,4 @@ const KakaoLogin = () => {
   )
 }
 
-export default KakaoLogin
+export default KakaoLoginBtn
