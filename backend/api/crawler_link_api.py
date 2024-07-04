@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-from transformers import BertTokenizer, BertModel, AutoTokenizer, AutoModel
+from transformers import CLIPProcessor, CLIPModel
 import torch
 import mysql.connector
 from fastapi import FastAPI, HTTPException, APIRouter
@@ -21,7 +21,7 @@ db = Database(**db_config)
 db.connect()
 db.create_table()
 
-# 크롤링 함수 (각 사이트마다 html 태그가 다름 따라서 사이트 별 태그 분석 후 모듈화 필요)
+# 크롤링 함수
 def crawl_data(url):
     response = requests.get(url)
     if response.status_code == 200:
@@ -32,18 +32,18 @@ def crawl_data(url):
     else:
         return None, None
 
+# CLIP 모델 및 프로세서 로드
+model_name = "openai/clip-vit-base-patch32"
+processor = CLIPProcessor.from_pretrained(model_name)
+model = CLIPModel.from_pretrained(model_name)
 
 # 임베딩 함수
-def embed_text(text: str) -> list :
-    tokenizer = AutoTokenizer.from_pretrained('klue/bert-base') # 모델은 transformers의 klue/bert-base 영어 한국어 지원 모델
-    model = AutoModel.from_pretrained('klue/bert-base')         # pip install transformers torch 설치 필요
-
-    inputs = tokenizer(text, return_tensors='pt', truncation=True, padding=True, max_length=512)
-    outputs = model(**inputs)
-
-    embeddings = torch.mean(outputs.last_hidden_state, dim=1)
-    return embeddings.detach().numpy().tolist()
-
+def embed_text(text: str) -> list:
+    inputs = processor(text=text, return_tensors="pt", padding=True, truncation=True, max_length=77)
+    with torch.no_grad():
+        outputs = model.get_text_features(**inputs)
+    
+    return outputs.squeeze().numpy().tolist()
 
 # Bookmark model
 class Bookmark(BaseModel):
@@ -66,8 +66,8 @@ async def add_bookmark(bookmark: Bookmark):
         "url": url,
         "title": title,
         "content_length": len(content),
-        "content" : content,
-        "embedding" : embedding
+        "content": content,
+        "embedding": embedding
     }
 
 # call_crawler 함수 정의

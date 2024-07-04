@@ -1,5 +1,7 @@
 import urllib.parse
 import os
+import urllib.parse
+import os
 from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel
 import PyPDF2
@@ -30,7 +32,29 @@ vector_db = VectorDatabase(
 )
 
 class PDFUrl(BaseModel):
-    url: str
+    url: str  # pdf_path에서 url로 변경
+
+def extract_text_from_local_pdf(pdf_url: str) -> str:
+    # URL 디코딩
+    decoded_path = urllib.parse.unquote(pdf_url)
+    
+    # 파일 프로토콜 제거
+    if decoded_path.startswith("file:///"):
+        decoded_path = decoded_path[8:]
+    
+    # 경로 구분자 변경
+    decoded_path = decoded_path.replace("/", os.path.sep)
+    
+    if not os.path.exists(decoded_path):
+        raise FileNotFoundError(f"File not found: {decoded_path}")
+    
+    with open(decoded_path, 'rb') as file:
+        reader = PyPDF2.PdfReader(file)
+        text = ""
+        for page in reader.pages:
+            text += page.extract_text()
+    
+    return text
 
 # 로컬 pdf파일 링크로 텍스트 추출
 def extract_text_from_local_pdf(pdf_url: str) -> str:
@@ -57,8 +81,8 @@ def extract_text_from_local_pdf(pdf_url: str) -> str:
 
 # 임베딩 함수
 def embed_text(text: str) -> list :
-    tokenizer = AutoTokenizer.from_pretrained('klue/bert-base') # 모델은 transformers의 klue/bert-base 한국어 임베딩 지원 모델
-    model = AutoModel.from_pretrained('klue/bert-base')         # pip install transformers torch 설치 필요
+    tokenizer = AutoTokenizer.from_pretrained('openai/clip-vit-large-patch14') # 모델은 transformers의 klue/bert-base 한국어 임베딩 지원 모델
+    model = AutoModel.from_pretrained('openai/clip-vit-large-patch14')         # pip install transformers torch 설치 필요
 
     inputs = tokenizer(text, return_tensors='pt', truncation=True, padding=True, max_length=512)
     outputs = model(**inputs)
