@@ -73,3 +73,13 @@ class Database:
             self.conn.rollback()
             raise
 
+    def insert_image(self, url, content):
+            try:
+                self.cursor.execute("INSERT INTO test_table (url, content) VALUES (%s, %s)", (url, content))
+                self.conn.commit()
+                image_id = self.cursor.lastrowid
+                return image_id
+            except Error as e:
+                print(f"이미지 삽입 에러: {e}")
+                self.conn.rollback()
+                raise

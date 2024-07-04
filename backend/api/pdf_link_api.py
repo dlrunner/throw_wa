@@ -81,8 +81,8 @@ def extract_text_from_local_pdf(pdf_url: str) -> str:
 
 # 임베딩 함수
 def embed_text(text: str) -> list :
-    tokenizer = AutoTokenizer.from_pretrained('klue/bert-base') # 모델은 transformers의 klue/bert-base 한국어 임베딩 지원 모델
-    model = AutoModel.from_pretrained('klue/bert-base')         # pip install transformers torch 설치 필요
+    tokenizer = AutoTokenizer.from_pretrained('openai/clip-vit-large-patch14') # 모델은 transformers의 klue/bert-base 한국어 임베딩 지원 모델
+    model = AutoModel.from_pretrained('openai/clip-vit-large-patch14')         # pip install transformers torch 설치 필요
 
     inputs = tokenizer(text, return_tensors='pt', truncation=True, padding=True, max_length=512)
     outputs = model(**inputs)
