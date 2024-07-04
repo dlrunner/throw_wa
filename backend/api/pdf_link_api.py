@@ -6,9 +6,10 @@ from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel
 import PyPDF2
 from database.database import Database
-from transformers import BertTokenizer, BertModel , AutoTokenizer, AutoModel
+from transformers import CLIPProcessor, CLIPModel
 import torch
 from database.vector_db import VectorDatabase
+import numpy as np
 
 router = APIRouter()
 
@@ -30,6 +31,11 @@ vector_db = VectorDatabase(
     index_name="vector",
     dimension=768
 )
+
+# CLIP 모델 및 프로세서 로드
+model_name = "openai/clip-vit-large-patch14"
+processor = CLIPProcessor.from_pretrained(model_name)
+model = CLIPModel.from_pretrained(model_name)
 
 class PDFUrl(BaseModel):
     url: str  # pdf_path에서 url로 변경
@@ -56,40 +62,23 @@ def extract_text_from_local_pdf(pdf_url: str) -> str:
     
     return text
 
-# 로컬 pdf파일 링크로 텍스트 추출
-def extract_text_from_local_pdf(pdf_url: str) -> str:
-    # URL 디코딩
-    decoded_path = urllib.parse.unquote(pdf_url)
-    
-    # 파일 프로토콜 제거 이유: file:/// 은 못읽음. 제거 필요
-    if decoded_path.startswith("file:///"):
-        decoded_path = decoded_path[8:]
-    
-    # 경로 구분자 변경
-    decoded_path = decoded_path.replace("/", os.path.sep)
-    
-    if not os.path.exists(decoded_path):
-        raise FileNotFoundError(f"File not found: {decoded_path}")
-    
-    with open(decoded_path, 'rb') as file:
-        reader = PyPDF2.PdfReader(file)
-        text = ""
-        for page in reader.pages:
-            text += page.extract_text()
-    
-    return text
 
-# 임베딩 함수
-def embed_text(text: str) -> list :
-    tokenizer = AutoTokenizer.from_pretrained('openai/clip-vit-large-patch14') # 모델은 transformers의 klue/bert-base 한국어 임베딩 지원 모델
-    model = AutoModel.from_pretrained('openai/clip-vit-large-patch14')         # pip install transformers torch 설치 필요
-
-    inputs = tokenizer(text, return_tensors='pt', truncation=True, padding=True, max_length=512)
-    outputs = model(**inputs)
-
-    # BERT 모델의 출력에서 평균을 구하여 리스트 형태로 변환
-    embeddings = torch.mean(outputs.last_hidden_state, dim=1).squeeze().detach().numpy().tolist()
-    return embeddings
+# 텍스트 임베딩 함수
+def embed_text(text: str) -> list:
+    # 텍스트를 최대 길이 77로 분할
+    max_length = 77
+    text_chunks = [text[i:i+max_length] for i in range(0, len(text), max_length)]
+    
+    embeddings = []
+    for chunk in text_chunks:
+        inputs = processor(text=[chunk], return_tensors="pt", padding=True, truncation=True)
+        with torch.no_grad():
+            text_features = model.get_text_features(**inputs)
+        embeddings.append(text_features.squeeze().cpu().numpy())
+    
+    # 모든 청크 임베딩의 평균을 계산
+    mean_embedding = np.mean(embeddings, axis=0)
+    return mean_embedding.tolist()
 
 
 # 엔드포인트
@@ -104,7 +93,7 @@ async def extract_local_pdf(pdf_url: PDFUrl):
         vector_db.upsert_vector(
             vector_id=str(pdf_id),
             vector=embedding,
-            metadata={"source": extracted_text}
+            metadata={"link": pdf_url.url}
         )
         return {"success": True, "text": extracted_text, "embedding": embedding}  # success 필드 추가 text embedding 
     except FileNotFoundError as e:

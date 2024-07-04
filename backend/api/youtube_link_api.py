@@ -9,8 +9,9 @@ import faiss
 from sentence_transformers import SentenceTransformer
 import numpy as np
 from database.database import Database
-from transformers import BertTokenizer, BertModel, AutoModel, AutoTokenizer
+from transformers import CLIPProcessor, CLIPModel
 import torch
+from database.vector_db import VectorDatabase
 
 router = APIRouter()
 
@@ -28,6 +29,19 @@ db_config = {
 db = Database(**db_config)
 db.connect()
 db.create_table()
+
+# 백터 데이터베이스 설정
+vector_db = VectorDatabase(
+    api_key="a662c43c-d2dd-4e2d-b187-604b1cf9414c",
+    environment="us-east-1",
+    index_name="vector",
+    dimension=768
+)
+
+# CLIP 모델 및 프로세서 로드
+model_name = "openai/clip-vit-large-patch14"
+processor = CLIPProcessor.from_pretrained(model_name)
+model = CLIPModel.from_pretrained(model_name)
 
 # 유튜브 오디오 다운로드 함수 pip install yt_dlp 설치 필요
 def download_audio(youtube_url, output_path):
@@ -69,16 +83,22 @@ def process_youtube_link(youtube_url, language="ko"):
 
     return content, video_id
 
-# 임베딩 함수
-def embed_text(text: str) -> list :
-    tokenizer = AutoTokenizer.from_pretrained('klue/bert-base') # 모델은 transformers의 klue/bert-base 영어 한국어 지원 모델
-    model = AutoModel.from_pretrained('klue/bert-base')         # pip install transformers torch 설치 필요
-
-    inputs = tokenizer(text, return_tensors='pt', truncation=True, padding=True, max_length=512)
-    outputs = model(**inputs)
-
-    embeddings = torch.mean(outputs.last_hidden_state, dim=1)
-    return embeddings.detach().numpy().tolist()
+# 텍스트 임베딩 함수
+def embed_text(text: str) -> list:
+    # 텍스트를 최대 길이 77로 분할
+    max_length = 77
+    text_chunks = [text[i:i+max_length] for i in range(0, len(text), max_length)]
+    
+    embeddings = []
+    for chunk in text_chunks:
+        inputs = processor(text=[chunk], return_tensors="pt", padding=True, truncation=True)
+        with torch.no_grad():
+            text_features = model.get_text_features(**inputs)
+        embeddings.append(text_features.squeeze().cpu().numpy())
+    
+    # 모든 청크 임베딩의 평균을 계산
+    mean_embedding = np.mean(embeddings, axis=0)
+    return mean_embedding.tolist()
 
 # 엔드포인트
 @router.post("/youtube_text")
@@ -86,6 +106,13 @@ async def transcribe(request: TranscribeRequest):
     try:
         result, video_id = process_youtube_link(request.url, request.language)
         embedding = embed_text(result)
+
+        # 백터 디비에 upsert
+        vector_db.upsert_vector(
+            vector_id = str(video_id),
+            vector= embedding,
+            metadata={"link" : request.url}
+        )
         return {"success": True, "content": result, "video_id": video_id, "embedding" : embedding}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
