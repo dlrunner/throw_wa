@@ -6,7 +6,7 @@ import mysql.connector
 from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel
 import pickle
-from database import Database
+from database.database import Database
 
 router = APIRouter()
 
@@ -69,3 +69,9 @@ async def add_bookmark(bookmark: Bookmark):
         "content": content,
         "embedding": embedding
     }
+
+# call_crawler 함수 정의
+async def call_crawler(link : str) :
+    request = Bookmark(url=link)
+    return await add_bookmark(request)
+

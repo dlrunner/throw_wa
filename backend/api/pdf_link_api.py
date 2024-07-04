@@ -5,7 +5,10 @@ import os
 from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel
 import PyPDF2
-from database import Database
+from database.database import Database
+from transformers import BertTokenizer, BertModel , AutoTokenizer, AutoModel
+import torch
+from database.vector_db import VectorDatabase
 
 router = APIRouter()
 
@@ -19,6 +22,14 @@ db_config = {
 db = Database(**db_config)
 db.connect()
 db.create_table()
+
+# 백터 데이터베이스 설정
+vector_db = VectorDatabase(
+    api_key="a662c43c-d2dd-4e2d-b187-604b1cf9414c",
+    environment="us-east-1",
+    index_name="vector",
+    dimension=768
+)
 
 class PDFUrl(BaseModel):
     url: str  # pdf_path에서 url로 변경
@@ -76,18 +87,32 @@ def embed_text(text: str) -> list :
     inputs = tokenizer(text, return_tensors='pt', truncation=True, padding=True, max_length=512)
     outputs = model(**inputs)
 
-    embeddings = torch.mean(outputs.last_hidden_state, dim=1)
-    return embeddings.detach().numpy().tolist()
+    # BERT 모델의 출력에서 평균을 구하여 리스트 형태로 변환
+    embeddings = torch.mean(outputs.last_hidden_state, dim=1).squeeze().detach().numpy().tolist()
+    return embeddings
 
 
-
+# 엔드포인트
 @router.post("/pdf_text")
 async def extract_local_pdf(pdf_url: PDFUrl):
     try:
         extracted_text = extract_text_from_local_pdf(pdf_url.url)
         pdf_id = db.insert_pdf(pdf_url.url,extracted_text)
-        return {"success": True, "text": extracted_text}  # success 필드 추가
+        embedding = embed_text(extracted_text)
+
+        # 벡터 디비에 upsert
+        vector_db.upsert_vector(
+            vector_id=str(pdf_id),
+            vector=embedding,
+            metadata={"source": extracted_text}
+        )
+        return {"success": True, "text": extracted_text, "embedding": embedding}  # success 필드 추가 text embedding 
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+# call_pdf 함수 정의
+async def call_pdf(link:str):
+    request = PDFUrl(url=link)
+    return await extract_local_pdf(request)

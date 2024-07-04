@@ -32,7 +32,7 @@ class Database:
                                   (id INT AUTO_INCREMENT PRIMARY KEY,
                                    url TEXT,
                                     title TEXT,
-                                   content TEXT)''')
+                                   content LONGTEXT)''')
             self.conn.commit()
             print("테이블 생성 성공")
         except Error as e :
