@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "React-Extension",
+  "version": "1.0",
+  "description": "그냥 좀 한방에 돼라",
+  "icons": {
+    "16": "/extension/icons/icon16.png",
+    "48": "/extension/icons/icon48.png",
+    "128": "/extension/icons/icon128.png"
+  },
+  "permissions": [
+    "activeTab",
+    "sidePanel"
+  ],
+  "background": {
+    "service_worker": "/extension/background.js"
+  },
+  "action": {
+    "default_title": "Open Login"
+  },
+  "side_panel": {
+    "default_path": "index.html"
+  }
+}
