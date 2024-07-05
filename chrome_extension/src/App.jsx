@@ -5,6 +5,7 @@ import { Link, Route, Routes } from 'react-router-dom';
 import SignUp from './Components/SignUp';
 import KakaoLoginBtn from './Components/KakaoLoginBtn';
 import Home from './Components/Home';
+import Onboarding from './Components/OnBorading';
 
 const Container = styled.div`
   display: flex;
@@ -17,12 +18,8 @@ function App() {
 
   return (
     <>
-    <nav>
-      <Link to="/signUp">signUp</Link>
-      <Link to="/login">login</Link>
-      <Link to="/home">home</Link>
-    </nav>
       <Routes>
+        <Route path='/' element={<Onboarding />}></Route>
         <Route path='/signUp' element={<SignUp />}></Route>
         <Route path='/login' element={<KakaoLoginBtn />}></Route>
         <Route path='/home' element={<Home />}></Route>
