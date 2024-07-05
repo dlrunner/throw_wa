@@ -1,0 +1,30 @@
+.onboarding-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f0f0f0;
+  }
+  
+  .logo {
+    width: 150px;
+    height: auto;
+    cursor: pointer;
+  }
+  
+  .wave-effect {
+    animation: wave 1s forwards;
+  }
+  
+  @keyframes wave {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  

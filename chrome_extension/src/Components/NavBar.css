@@ -1,0 +1,30 @@
+/* NavBar.css */
+.nav-bar-container {
+    display: flex;
+    justify-content: space-around;
+    background-color: #333;
+    padding: 10px;
+  }
+  
+  .nav-button {
+    background-color: #444;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+  }
+  
+  .nav-button:hover {
+    background-color: #555;
+  }
+  
+  .nav-button:disabled {
+    background-color: #666;
+    cursor: not-allowed;
+  }
+  
+  .result-div {
+    margin-top: 20px;
+    color: white;
+  }
+  
