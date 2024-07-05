@@ -11,7 +11,7 @@ const KakaoLoginHandler = (props) => {
     const kakaoLoginCertification = async () => {
       await axios({
         method: "GET",
-        url: `${import.meta.env.VITE_API_URL}/oauth2/callback/kakao?code=${code}`,
+        url: `${import.meta.env.VITE_API_URL}/api/oauth2/callback/kakao?code=${code}`,
         headers: {
           "Content-Type": "application/json;charset=utf-8", // json형태로 데이터를 보내는 코드
           "Access-Control-Allow-Origin": "*" // CORS 인증 코드, 프로젝트 url에 맞게 수정해야함
