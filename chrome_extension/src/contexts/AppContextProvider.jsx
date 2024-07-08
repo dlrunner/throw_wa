@@ -15,7 +15,11 @@ const AppContextProvider = (props) => {
     return await axios(`/api/posts/${id}`);
   }
   const createMember = async (post) => {
-    return await axios.post('http://localhost:8080/api/signUp', post);
+    console.log("createMember");
+    console.log(post);
+    return await axios.post('/api/signUp', post, {headers: {
+      'Content-Type': 'application/json'
+    },});
   }
 
   const value = {

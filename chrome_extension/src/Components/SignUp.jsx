@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../contexts/AppContextProvider';
 import { Button, Col, Form, FormControl, Row } from 'react-bootstrap'
+import axios from 'axios';
 
 const SignUp = () => {
   const navigate = useNavigate();
@@ -14,20 +15,35 @@ const SignUp = () => {
   const { email, password } = frm;
 
   const onChangeFrm = (e) => {
+    console.log("onChangeFrm");
+    console.log(e);
     setFrm({
       ...frm,
       [e.target.name]: e.target.value,
     });
   };
 
-  const onSubmitFrm = (e) => {
+  const onSubmitFrm = async (e) => {
     e.preventDefault();
-    createMember(frm)
-      .then(res => {
-        const { headers: { location } } = res;
-        navigate('/home');
-      })
-  }
+    console.log("onSubmitFrm");
+    console.log(e);
+    try {
+        const response = await axios.post(
+            `http://localhost:8080/api/signUp`,
+            frm,
+            {
+                headers: {
+                    "Content-Type": "application/json; charset=utf=8",
+                },
+                withCredentials: true
+            }
+        );
+        console.log("res");
+        console.log(response.data);
+    } catch (error) {
+        console.error("Error:", error);
+    }
+};
 
   return (
     <>
