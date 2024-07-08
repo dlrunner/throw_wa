@@ -1,12 +1,10 @@
 import urllib.parse
 import os
-import urllib.parse
-import os
 from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel
 import PyPDF2
 from database.database import Database
-from transformers import CLIPProcessor, CLIPModel
+from transformers import AutoTokenizer, AutoModel
 import torch
 from database.vector_db import VectorDatabase
 import numpy as np
@@ -24,18 +22,18 @@ db = Database(**db_config)
 db.connect()
 db.create_table()
 
-# 백터 데이터베이스 설정
+# 벡터 데이터베이스 설정
 vector_db = VectorDatabase(
     api_key="a662c43c-d2dd-4e2d-b187-604b1cf9414c",
     environment="us-east-1",
-    index_name="vector",
-    dimension=768
+    index_name="dlrunner",
+    dimension=384
 )
 
-# CLIP 모델 및 프로세서 로드
-model_name = "openai/clip-vit-large-patch14"
-processor = CLIPProcessor.from_pretrained(model_name)
-model = CLIPModel.from_pretrained(model_name)
+# 텍스트 임베딩 모델
+model_name = "intfloat/multilingual-e5-small"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModel.from_pretrained(model_name)
 
 class PDFUrl(BaseModel):
     url: str  # pdf_path에서 url로 변경
@@ -62,7 +60,6 @@ def extract_text_from_local_pdf(pdf_url: str) -> str:
     
     return text
 
-
 # 텍스트 임베딩 함수
 def embed_text(text: str) -> list:
     # 텍스트를 최대 길이 77로 분할
@@ -71,22 +68,23 @@ def embed_text(text: str) -> list:
     
     embeddings = []
     for chunk in text_chunks:
-        inputs = processor(text=[chunk], return_tensors="pt", padding=True, truncation=True)
+        inputs = tokenizer(chunk, return_tensors="pt", padding=True, truncation=True)
         with torch.no_grad():
-            text_features = model.get_text_features(**inputs)
+            outputs = model(**inputs)
+            # BERT 모델의 출력에서 문장 임베딩을 생성 (평균 풀링)
+            text_features = outputs.last_hidden_state.mean(dim=1)
         embeddings.append(text_features.squeeze().cpu().numpy())
     
     # 모든 청크 임베딩의 평균을 계산
     mean_embedding = np.mean(embeddings, axis=0)
     return mean_embedding.tolist()
 
-
 # 엔드포인트
 @router.post("/pdf_text")
 async def extract_local_pdf(pdf_url: PDFUrl):
     try:
         extracted_text = extract_text_from_local_pdf(pdf_url.url)
-        pdf_id = db.insert_pdf(pdf_url.url,extracted_text)
+        pdf_id = db.insert_pdf(pdf_url.url, extracted_text)
         embedding = embed_text(extracted_text)
 
         # 벡터 디비에 upsert
@@ -95,13 +93,13 @@ async def extract_local_pdf(pdf_url: PDFUrl):
             vector=embedding,
             metadata={"link": pdf_url.url}
         )
-        return {"success": True, "text": extracted_text, "embedding": embedding}  # success 필드 추가 text embedding 
+        return {"success": True, "text": extracted_text, "embedding": embedding}
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
 # call_pdf 함수 정의
-async def call_pdf(link:str):
+async def call_pdf(link: str):
     request = PDFUrl(url=link)
     return await extract_local_pdf(request)
