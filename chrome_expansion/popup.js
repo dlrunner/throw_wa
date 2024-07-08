@@ -7,7 +7,7 @@ document.getElementById('allButton').addEventListener('click', function() {
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
     let url = tabs[0].url;
 
-    fetch('http://localhost:8080/api/process_url', {
+    fetch('http://localhost:8080/api/url', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
