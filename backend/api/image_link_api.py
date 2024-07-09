@@ -57,14 +57,12 @@ with patch("transformers.dynamic_module_utils.get_imports", fixed_get_imports):
 florence_model.to(device)
 
 class ImageEmbRequest(BaseModel):
-    image_url: str
+    url: str
 
 @router.post("/image_embedding")
 async def get_image_embedding(request: ImageEmbRequest):
     try:
-        url = request.image_url
-        # 이미지 URL에서 이미지 로드
-        response = requests.get(url)
+        response = requests.get(request.url)
         image = Image.open(BytesIO(response.content))
 
         # 이미지 캡셔닝
@@ -91,18 +89,18 @@ async def get_image_embedding(request: ImageEmbRequest):
         text_embedding = text_outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
 
         # 데이터베이스에 결과 저장 (원본 영어 캡션만 저장)
-        image_id = db.insert_image(url, caption)
+        image_id = db.insert_image(request.url, caption)
 
         # 벡터 디비에 upsert
         vector_db.upsert_vector(
             vector_id=str(image_id),
             vector=text_embedding,
-            metadata={"link": url}
+            metadata={"link": request.url}
         )
 
         # 결과 준비
         results = {
-            "image_url": url,
+            "image_url": request.url,
             "이미지 캡셔닝 결과": caption,
             "텍스트 임베딩값": text_embedding.tolist()
         }
