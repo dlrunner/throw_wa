@@ -5,7 +5,6 @@ import whisper
 import os
 from fastapi.middleware.cors import CORSMiddleware
 import mysql.connector
-import faiss
 from sentence_transformers import SentenceTransformer
 import numpy as np
 from database.database import Database
