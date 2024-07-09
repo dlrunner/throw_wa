@@ -62,8 +62,9 @@ class ImageEmbRequest(BaseModel):
 @router.post("/image_embedding")
 async def get_image_embedding(request: ImageEmbRequest):
     try:
+        image_url = request.image_url
         # 이미지 URL에서 이미지 로드
-        response = requests.get(request.image_url)
+        response = requests.get(image_url)
         image = Image.open(BytesIO(response.content))
 
         # 이미지 캡셔닝

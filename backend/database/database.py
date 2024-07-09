@@ -73,9 +73,9 @@ class Database:
             self.conn.rollback()
             raise
 
-    def insert_image(self, url, content):
+    def insert_image(self, image_url, content):
             try:
-                self.cursor.execute("INSERT INTO test_table (url, content) VALUES (%s, %s)", (url, content))
+                self.cursor.execute("INSERT INTO test_table (image_url, content) VALUES (%s, %s)", (image_url, content))
                 self.conn.commit()
                 image_id = self.cursor.lastrowid
                 return image_id
