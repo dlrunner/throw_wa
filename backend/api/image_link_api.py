@@ -42,14 +42,14 @@ model = AutoModel.from_pretrained(model_name)
 device = torch.device("cpu")
 model.to(device)
 
+# 임포트 리스트에서 flash_attn 제거
 def fixed_get_imports(filename: str | os.PathLike) -> list[str]:
-    if not str(filename).endswith("/modeling_florence2.py"):
-        return get_imports(filename)
     imports = get_imports(filename)
     if "flash_attn" in imports:
         imports.remove("flash_attn")
     return imports
 
+# unittest.mock을 사용하여 get_imports 함수를 패치합니다.
 with patch("transformers.dynamic_module_utils.get_imports", fixed_get_imports):
     florence_model = AutoModelForCausalLM.from_pretrained("microsoft/Florence-2-base", trust_remote_code=True)
     florence_processor = AutoProcessor.from_pretrained("microsoft/Florence-2-base", trust_remote_code=True)
@@ -100,6 +100,7 @@ async def get_image_embedding(request: ImageEmbRequest):
 
         # 결과 준비
         results = {
+            "success": True,
             "image_url": request.url,
             "이미지 캡셔닝 결과": caption,
             "텍스트 임베딩값": text_embedding.tolist()
