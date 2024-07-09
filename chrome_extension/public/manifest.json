@@ -10,7 +10,9 @@
   },
   "permissions": [
     "activeTab",
-    "sidePanel"
+    "sidePanel",
+    "tabs",
+    "<all_urls>"
   ],
   "background": {
     "service_worker": "/extension/background.js"
