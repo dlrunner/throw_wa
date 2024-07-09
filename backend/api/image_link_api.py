@@ -62,9 +62,9 @@ class ImageEmbRequest(BaseModel):
 @router.post("/image_embedding")
 async def get_image_embedding(request: ImageEmbRequest):
     try:
-        image_url = request.image_url
+        url = request.image_url
         # 이미지 URL에서 이미지 로드
-        response = requests.get(image_url)
+        response = requests.get(url)
         image = Image.open(BytesIO(response.content))
 
         # 이미지 캡셔닝
@@ -91,18 +91,18 @@ async def get_image_embedding(request: ImageEmbRequest):
         text_embedding = text_outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
 
         # 데이터베이스에 결과 저장 (원본 영어 캡션만 저장)
-        image_id = db.insert_image(request.image_url, caption)
+        image_id = db.insert_image(url, caption)
 
         # 벡터 디비에 upsert
         vector_db.upsert_vector(
             vector_id=str(image_id),
             vector=text_embedding,
-            metadata={"link": request.image_url}
+            metadata={"link": url}
         )
 
         # 결과 준비
         results = {
-            "image_url": request.image_url,
+            "image_url": url,
             "이미지 캡셔닝 결과": caption,
             "텍스트 임베딩값": text_embedding.tolist()
         }
