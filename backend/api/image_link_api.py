@@ -1,14 +1,7 @@
-import os
-from unittest.mock import patch
-import requests
-from PIL import Image
-from io import BytesIO
+# api/image_link_api.py
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from transformers import AutoModelForCausalLM, AutoProcessor, AutoTokenizer, AutoModel
-from transformers.dynamic_module_utils import get_imports
-import torch
-import numpy as np
+from models.embedding import imagecaption, embed_text  # 임베딩 함수 호출
 from database.database import Database
 from database.vector_db import VectorDatabase
 import httpx
@@ -26,68 +19,17 @@ db = Database(**db_config)
 db.connect()
 db.create_table()
 
-# 텍스트 임베딩 모델
-model_name = "intfloat/multilingual-e5-small"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModel.from_pretrained(model_name)
-
-# 모델을 CPU로 설정
-device = torch.device("cpu")
-model.to(device)
-
-# 임포트 리스트에서 flash_attn 제거
-def fixed_get_imports(filename: str | os.PathLike) -> list[str]:
-    imports = get_imports(filename)
-    if "flash_attn" in imports:
-        imports.remove("flash_attn")
-    return imports
-
-# unittest.mock을 사용하여 get_imports 함수를 패치합니다.
-with patch("transformers.dynamic_module_utils.get_imports", fixed_get_imports):
-    florence_model = AutoModelForCausalLM.from_pretrained("microsoft/Florence-2-base", trust_remote_code=True)
-    florence_processor = AutoProcessor.from_pretrained("microsoft/Florence-2-base", trust_remote_code=True)
-
-florence_model.to(device)
-
 class ImageEmbRequest(BaseModel):
     url: str
 
 @router.post("/image_embedding")
-async def get_image_embedding(request: ImageEmbRequest):
+async def get_image_embedding_endpoint(request: ImageEmbRequest):
     try:
-        response = requests.get(request.url)
-        response.raise_for_status()
-        image = Image.open(BytesIO(response.content))
-    except requests.RequestException as e:
-        print(f"Request error during image fetching: {str(e)}")
-        raise HTTPException(status_code=500, detail="이미지 가져오는 중 오류가 발생했습니다.")
-    except Exception as e:
-        print(f"오류 발생: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-    try:
-        # 이미지 캡셔닝
-        prompt = "<MORE_DETAILED_CAPTION>"
-        inputs = florence_processor(text=prompt, images=image, return_tensors="pt")
-        inputs = {k: v.to(device) for k, v in inputs.items()}
-
-        with torch.no_grad():
-            generated_ids = florence_model.generate(
-                input_ids=inputs["input_ids"],
-                pixel_values=inputs["pixel_values"],
-                max_new_tokens=50,
-                num_beams=3,
-            )
-
-        generated_text = florence_processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
-        parsed_answer = florence_processor.post_process_generation(generated_text, task=prompt, image_size=(image.width, image.height))
-        caption = parsed_answer.get("<MORE_DETAILED_CAPTION>", "No caption generated")
-
-        # 텍스트 임베딩 (원본 영어 캡션 사용)
-        text_inputs = tokenizer(text=[caption], return_tensors="pt", padding=True).to(device)
-        with torch.no_grad():
-            text_outputs = model(**text_inputs)
-        embedding = text_outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
+        # 이미지 캡셔닝 및 텍스트 임베딩 함수 호출
+        caption, _ = imagecaption(request.url)
+        
+        # E5 모델을 사용하여 텍스트 임베딩
+        embedding = embed_text(caption)
 
         # 데이터베이스에 결과 저장 (원본 영어 캡션만 저장)
         id = db.insert_image(request.url, caption)
@@ -97,12 +39,12 @@ async def get_image_embedding(request: ImageEmbRequest):
             "success": True,
             "image_url": request.url,
             "이미지 캡셔닝 결과": caption,
-            "텍스트 임베딩값": embedding.tolist()
+            "텍스트 임베딩값": embedding
         }
 
         payload = {
             "id": str(id),
-            "embedding": embedding.tolist(),
+            "embedding": embedding,
             "link": request.url
         }
 

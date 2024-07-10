@@ -1,11 +1,9 @@
+# api/crawler_link_api.py
 import requests
 from bs4 import BeautifulSoup
-from transformers import CLIPProcessor, CLIPModel , AutoTokenizer, AutoModel
-import torch
-import mysql.connector
-from fastapi import FastAPI, HTTPException, APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-import pickle
+from models.embedding import embed_text  # 임베딩 함수 호출
 from database.database import Database
 from database.vector_db import VectorDatabase
 import numpy as np
@@ -13,16 +11,20 @@ import httpx
 
 router = APIRouter()
 
-# MySQL 데이터베이스 연결 설정
+# MySQL 데이터베이스 설정
 db_config = {
     'host': '127.0.0.1',
     'user': 'nlrunner',
     'password': 'nlrunner',
     'database': 'nlrunner_db'
 }
-db = Database(**db_config)
-db.connect()
-db.create_table()
+try:
+    db = Database(**db_config)
+    db.connect()
+    db.create_table()
+except Exception as e:
+    print(f"Database 연결 오류: {e}")
+    raise
 
 # 크롤링 함수
 def crawl_data(url):
@@ -34,30 +36,6 @@ def crawl_data(url):
         return title, content
     else:
         return None, None
-
-# 텍스트 임베딩 모델
-model_name = "intfloat/multilingual-e5-small"
-processor = AutoTokenizer.from_pretrained(model_name)
-model = AutoModel.from_pretrained(model_name)
-
-# 텍스트 임베딩 함수
-def embed_text(text: str) -> list:
-    # 텍스트를 최대 길이 77로 분할
-    max_length = 77
-    text_chunks = [text[i:i+max_length] for i in range(0, len(text), max_length)]
-    
-    embeddings = []
-    for chunk in text_chunks:
-        inputs = processor(chunk, return_tensors="pt", padding=True, truncation=True)
-        with torch.no_grad():
-            outputs = model(**inputs)
-            text_features = outputs.last_hidden_state.mean(dim=1)  # BERT 모델의 임베딩 추출 방식
-        embeddings.append(text_features.squeeze().cpu().numpy())
-    
-    # 모든 청크 임베딩의 평균을 계산
-    mean_embedding = np.mean(embeddings, axis=0)
-    return mean_embedding.tolist()
-
 
 # Bookmark model
 class Bookmark(BaseModel):
@@ -100,5 +78,3 @@ async def add_bookmark(bookmark: Bookmark):
         "content": content,
         "embedding": embedding
     }
-
-
