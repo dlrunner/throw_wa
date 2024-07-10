@@ -71,8 +71,8 @@ async def search(request: QueryRequest):
             "matches": [
                 {
                     "id": match['id'], 
-                    "유사도": match['score'],
-                    "링크": match['metadata'] if 'metadata' in match else {}
+                    "score": match['score'],
+                    "link": match['metadata']['link'] if 'metadata' in match else {}
                 }
                 for match in result['matches']
             ]

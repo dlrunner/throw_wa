@@ -36,10 +36,6 @@ const SignUp = () => {
   return (
     <form onSubmit={handleSubmit}>
       <div>
-        <label>아이디:</label>
-        <input type="text" name="username" value={form.username} onChange={handleChange} required />
-      </div>
-      <div>
         <label>이메일:</label>
         <input type="email" name="email" value={form.email} onChange={handleChange} required />
       </div>
@@ -50,14 +46,6 @@ const SignUp = () => {
       <div>
         <label>비밀번호:</label>
         <input type="password" name="password" value={form.password} onChange={handleChange} required />
-      </div>
-      <div>
-        <label>휴대폰:</label>
-        <input type="tel" name="phone" value={form.phone} onChange={handleChange} required />
-      </div>
-      <div>
-        <label>닉네임:</label>
-        <input type="text" name="nickname" value={form.nickname} onChange={handleChange} required />
       </div>
       <button type="submit">회원가입</button>
     </form>

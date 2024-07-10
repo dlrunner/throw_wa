@@ -11,6 +11,7 @@ import torch
 import numpy as np
 from database.database import Database
 from database.vector_db import VectorDatabase
+import httpx
 
 router = APIRouter()
 
@@ -24,14 +25,6 @@ db_config = {
 db = Database(**db_config)
 db.connect()
 db.create_table()
-
-# 벡터 데이터베이스 설정
-vector_db = VectorDatabase(
-    api_key="a662c43c-d2dd-4e2d-b187-604b1cf9414c",
-    environment="us-east-1",
-    index_name="dlrunner",
-    dimension=384
-)
 
 # 텍스트 임베딩 모델
 model_name = "intfloat/multilingual-e5-small"
@@ -63,8 +56,16 @@ class ImageEmbRequest(BaseModel):
 async def get_image_embedding(request: ImageEmbRequest):
     try:
         response = requests.get(request.url)
+        response.raise_for_status()
         image = Image.open(BytesIO(response.content))
+    except requests.RequestException as e:
+        print(f"Request error during image fetching: {str(e)}")
+        raise HTTPException(status_code=500, detail="이미지 가져오는 중 오류가 발생했습니다.")
+    except Exception as e:
+        print(f"오류 발생: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
+    try:
         # 이미지 캡셔닝
         prompt = "<MORE_DETAILED_CAPTION>"
         inputs = florence_processor(text=prompt, images=image, return_tensors="pt")
@@ -77,8 +78,8 @@ async def get_image_embedding(request: ImageEmbRequest):
                 max_new_tokens=50,
                 num_beams=3,
             )
-        
-        generated_text = florence_processor.batch_decode(generated_ids, skip_special_tokens=False)[0]
+
+        generated_text = florence_processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
         parsed_answer = florence_processor.post_process_generation(generated_text, task=prompt, image_size=(image.width, image.height))
         caption = parsed_answer.get("<MORE_DETAILED_CAPTION>", "No caption generated")
 
@@ -86,28 +87,40 @@ async def get_image_embedding(request: ImageEmbRequest):
         text_inputs = tokenizer(text=[caption], return_tensors="pt", padding=True).to(device)
         with torch.no_grad():
             text_outputs = model(**text_inputs)
-        text_embedding = text_outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
+        embedding = text_outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
 
         # 데이터베이스에 결과 저장 (원본 영어 캡션만 저장)
-        image_id = db.insert_image(request.url, caption)
-
-        # 벡터 디비에 upsert
-        vector_db.upsert_vector(
-            vector_id=str(image_id),
-            vector=text_embedding,
-            metadata={"link": request.url}
-        )
+        id = db.insert_image(request.url, caption)
 
         # 결과 준비
         results = {
             "success": True,
             "image_url": request.url,
             "이미지 캡셔닝 결과": caption,
-            "텍스트 임베딩값": text_embedding.tolist()
+            "텍스트 임베딩값": embedding.tolist()
         }
 
-        print("모든 처리 완료")
-        return results
+        payload = {
+            "id": str(id),
+            "embedding": embedding.tolist(),
+            "link": request.url
+        }
+
+        spring_url = "http://localhost:8080/api/embedding"
+        async with httpx.AsyncClient() as client:
+            try:
+                spring_response = await client.post(spring_url, json=payload)
+                spring_response.raise_for_status()
+                print(f"Spring Boot 서버로의 연결이 성공하였습니다. 응답 코드: {spring_response.status_code}")
+            except httpx.HTTPStatusError as e:
+                print(f"HTTP error: {str(e)}")
+                raise HTTPException(status_code=500, detail="스프링 서버와 연결 중 HTTP 오류가 발생했습니다.")
+            except httpx.RequestError as e:
+                print(f"Request error: {str(e)}")
+                raise HTTPException(status_code=500, detail="스프링 서버와 연결 중 요청 오류가 발생했습니다.")
     except Exception as e:
         print(f"오류 발생: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+    print("모든 처리 완료")
+    return results

@@ -1,30 +1,42 @@
-/* NavBar.css */
 .nav-bar-container {
-    display: flex;
-    justify-content: space-around;
-    background-color: #333;
-    padding: 10px;
-  }
-  
-  .nav-button {
-    background-color: #444;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    cursor: pointer;
-  }
-  
-  .nav-button:hover {
-    background-color: #555;
-  }
-  
-  .nav-button:disabled {
-    background-color: #666;
-    cursor: not-allowed;
-  }
-  
-  .result-div {
-    margin-top: 20px;
-    color: white;
-  }
-  
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #333;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.nav-bar-actions {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px; /* 채팅 박스와 버튼 사이의 간격 */
+}
+
+.nav-button {
+  background-color: #444;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.nav-button:hover {
+  background-color: #555;
+}
+
+.nav-button:disabled {
+  background-color: #666;
+  cursor: not-allowed;
+}
+
+.result-div {
+  color: white;
+}
+
+.chat-box-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
