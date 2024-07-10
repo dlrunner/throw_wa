@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "React-Extension",
+  "version": "1.0",
+  "description": "throw-wa",
+  "icons": {
+    "16": "/extension/icons/icon16.png",
+    "48": "/extension/icons/icon48.png",
+    "128": "/extension/icons/icon128.png"
+  },
+  "permissions": [
+    "activeTab",
+    "sidePanel",
+    "tabs",
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "/extension/background.js"
+  },
+  "action": {
+    "default_title": "throw-wa"
+  },
+  "side_panel": {
+    "default_path": "index.html"
+  }
+}
