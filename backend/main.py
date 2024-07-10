@@ -1,14 +1,20 @@
-from fastapi import FastAPI, HTTPException
+import re
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sentence_transformers import SentenceTransformer
 import numpy as np
-from youtube_link_api import router as youtube_router
-from pdf_link_api import router as pdf_router
-from crawler_link_api import router as crawler_router
+from api.youtube_link_api import router as youtube_router
+from api.pdf_link_api import router as pdf_router
+from api.crawler_link_api import router as crawler_router
+from api.search_api import router as search_router
+from api.image_link_api import router as image_router
 
 app = FastAPI()
 
-origins = ['*']
+origins = [
+    "http://localhost:8080",
+    "chrome-extension://fofliiokodhahgckpkfkfgacpkkfjjoc"
+]
 
 app.add_middleware(
     CORSMiddleware,
@@ -21,6 +27,8 @@ app.add_middleware(
 app.include_router(youtube_router, prefix="/api")
 app.include_router(pdf_router, prefix="/api")
 app.include_router(crawler_router, prefix="/api")
+app.include_router(search_router, prefix="/api")
+app.include_router(image_router, prefix="/api")
 
 # 앱 실행 코드
 if __name__ == "__main__":
