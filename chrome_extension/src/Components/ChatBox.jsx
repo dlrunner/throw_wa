@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import './ChatBox.css';  // 경로 수정
+import './ChatBox.css'; // 경로 수정
 
 const ChatBox = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [topK, setTopK] = useState(1);
 
   const handleSend = () => {
     if (input.trim() === '') return;
@@ -17,13 +18,11 @@ const ChatBox = () => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ text: input, top_k: 3 }),
+      body: JSON.stringify({ text: input, top_k: topK }),
     })
     .then(response => response.json())
     .then(data => {
-      console.log('API response:', data);
       const botMessages = data.matches.map(match => {
-        console.log('Link:', match.link ? match.link : 'No link');
         return {
           text: '링크',
           sender: 'bot',
@@ -37,15 +36,34 @@ const ChatBox = () => {
     });
   };
 
+  const truncateLink = (link) => {
+    const maxLength = 30;
+    if (link.length <= maxLength) return link;
+    return `${link.substring(0, maxLength)}...`;
+  };
+
   return (
     <div className="chat-box">
+      <div className="chat-settings">
+        <label>
+          범위:
+          <input
+            type="number"
+            value={topK}
+            onChange={(e) => setTopK(Number(e.target.value))}
+            min="1"
+          />
+        </label>
+      </div>
       <div className="chat-messages">
         {messages.map((msg, index) => (
           <div key={index} className={`chat-message ${msg.sender}`}>
             {msg.link ? (
-              <a href={msg.link} target='_blank' rel='noopener noreferrer'>
-                {msg.text}: {msg.link}
+              <>
+              {msg.text}:<a href={msg.link} target='_blank' rel='noopener noreferrer' title={msg.link}>
+                {truncateLink(msg.link)}
               </a>
+              </>
             ) : (
               msg.text
             )}
@@ -57,7 +75,7 @@ const ChatBox = () => {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Type a message..."
+          placeholder="뭐였더라..."
         />
         <button onClick={handleSend}>Send</button>
       </div>
