@@ -9,6 +9,7 @@ from transformers import AutoModel, AutoTokenizer
 import torch
 from database.database import Database
 from database.vector_db import VectorDatabase
+import httpx
 from models.embedding import embed_text  # 임베딩 함수 호출
 
 router = APIRouter()
@@ -27,14 +28,6 @@ db_config = {
 db = Database(**db_config)
 db.connect()
 db.create_table()
-
-# 벡터 데이터베이스 설정
-vector_db = VectorDatabase(
-    api_key="a662c43c-d2dd-4e2d-b187-604b1cf9414c",
-    environment="us-east-1",
-    index_name="dlrunner",
-    dimension=384
-)
 
 # 유튜브 오디오 다운로드 함수 pip install yt_dlp 설치 필요
 def download_audio(youtube_url, output_path):
@@ -83,13 +76,27 @@ async def transcribe(request: TranscribeRequest):
         result, video_id = process_youtube_link(request.url, request.language)
         embedding = embed_text(result)
 
-        # 벡터 디비에 upsert
-        vector_db.upsert_vector(
-            vector_id=str(video_id),
-            vector=embedding,
-            metadata={"link": request.url}
-        )
-        return {"success": True, "content": result, "video_id": video_id, "embedding": embedding}
+        payload = {
+        "id": str(id),
+        "embedding" : embedding,
+        "link" : request.url
+    }
+
+        spring_url = "http://localhost:8080/api/embedding"
+        async with httpx.AsyncClient() as client:
+            try:
+                spring_response = await client.post(spring_url, json=payload)
+                spring_response.raise_for_status()
+                print(f"Spring Boot 서버로의 연결이 성공하였습니다. 응답 코드: {spring_response.status_code}")
+            except httpx.RequestError as e:
+                print(f"Error connecting to Spring Boot server: {str(e)}")
+                raise HTTPException(status_code=500, detail="스프링 서버와 연결할 수 없습니다.")
+            
+        return {
+            "success": True,
+            "content": result,
+            "video_id": video_id,
+            "embedding": embedding}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

@@ -6,6 +6,8 @@ from pydantic import BaseModel
 from models.embedding import embed_text  # 임베딩 함수 호출
 from database.database import Database
 from database.vector_db import VectorDatabase
+import numpy as np
+import httpx
 
 router = APIRouter()
 
@@ -16,7 +18,6 @@ db_config = {
     'password': 'nlrunner',
     'database': 'nlrunner_db'
 }
-
 try:
     db = Database(**db_config)
     db.connect()
@@ -24,14 +25,6 @@ try:
 except Exception as e:
     print(f"Database 연결 오류: {e}")
     raise
-
-# 벡터 데이터베이스 설정
-vector_db = VectorDatabase(
-    api_key="a662c43c-d2dd-4e2d-b187-604b1cf9414c",
-    environment="us-east-1",
-    index_name="dlrunner",
-    dimension=384
-)
 
 # 크롤링 함수
 def crawl_data(url):
@@ -56,25 +49,29 @@ async def add_bookmark(bookmark: Bookmark):
     if not title or not content:
         raise HTTPException(status_code=500, detail="이 웹사이트는 크롤링을 할 수 없습니다.")
 
-    try:
-        crawling_id = db.insert_crawling(url, title, content)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database 삽입 오류: {e}")
+    id = db.insert_crawling(url, title, content)
+    embedding = embed_text(content)
 
-    embedding = embed_text(content)  # 임베딩 함수 호출
+    payload = {
+        "id": str(id),
+        "embedding" : embedding,
+        "link" : url
+    }
 
-    try:
-        vector_db.upsert_vector(
-            vector_id=str(crawling_id),
-            vector=embedding,
-            metadata={"link": url}
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"VectorDB 삽입 오류: {e}")
+    spring_url = "http://localhost:8080/api/embedding"
+    async with httpx.AsyncClient() as client:
+        try:
+            spring_response = await client.post(spring_url, json=payload)
+            spring_response.raise_for_status()
+            print(f"Spring Boot 서버로의 연결이 성공하였습니다. 응답 코드: {spring_response.status_code}")
+        except httpx.RequestError as e:
+            print(f"Error connecting to Spring Boot server: {str(e)}")
+            raise HTTPException(status_code=500, detail="스프링 서버와 연결할 수 없습니다.")
 
+ 
     return {
         "success": True,
-        "id": crawling_id,
+        "id": id,
         "url": url,
         "title": title,
         "content_length": len(content),

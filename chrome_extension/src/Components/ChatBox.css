@@ -1,0 +1,45 @@
+.chat-box {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  margin-top: 10px;
+  width: 300px;
+  max-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-messages {
+  flex-grow: 1;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+.chat-message {
+  padding: 5px;
+  margin: 5px 0;
+  border-radius: 5px;
+}
+
+.chat-message.user {
+  background-color: #000000;
+  align-self: flex-end;
+}
+
+.chat-message.bot {
+  background-color: #000000;
+  align-self: flex-start;
+}
+
+.chat-input {
+  display: flex;
+}
+
+.chat-input input {
+  flex-grow: 1;
+  padding: 5px;
+}
+
+.chat-input button {
+  padding: 5px 10px;
+}
