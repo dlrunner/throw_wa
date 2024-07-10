@@ -5,12 +5,11 @@ import whisper
 import os
 from fastapi.middleware.cors import CORSMiddleware
 import mysql.connector
-from sentence_transformers import SentenceTransformer
-import numpy as np
-from database.database import Database
 from transformers import AutoModel, AutoTokenizer
 import torch
+from database.database import Database
 from database.vector_db import VectorDatabase
+from models.embedding import embed_text  # 임베딩 함수 호출
 
 router = APIRouter()
 
@@ -36,11 +35,6 @@ vector_db = VectorDatabase(
     index_name="dlrunner",
     dimension=384
 )
-
-# 텍스트 임베딩 모델
-model_name = "intfloat/multilingual-e5-small"
-processor = AutoTokenizer.from_pretrained(model_name)
-model = AutoModel.from_pretrained(model_name)
 
 # 유튜브 오디오 다운로드 함수 pip install yt_dlp 설치 필요
 def download_audio(youtube_url, output_path):
@@ -81,24 +75,6 @@ def process_youtube_link(youtube_url, language="ko"):
     video_id = db.insert_video(youtube_url, content)
 
     return content, video_id
-
-# 텍스트 임베딩 함수
-def embed_text(text: str) -> list:
-    # 텍스트를 최대 길이 77로 분할
-    max_length = 77
-    text_chunks = [text[i:i+max_length] for i in range(0, len(text), max_length)]
-    
-    embeddings = []
-    for chunk in text_chunks:
-        inputs = processor(chunk, return_tensors="pt", padding=True, truncation=True)
-        with torch.no_grad():
-            outputs = model(**inputs)
-            text_features = outputs.last_hidden_state.mean(dim=1)  # BERT 모델의 임베딩 추출 방식
-        embeddings.append(text_features.squeeze().cpu().numpy())
-    
-    # 모든 청크 임베딩의 평균을 계산
-    mean_embedding = np.mean(embeddings, axis=0)
-    return mean_embedding.tolist()
 
 # 엔드포인트
 @router.post("/youtube_text")
