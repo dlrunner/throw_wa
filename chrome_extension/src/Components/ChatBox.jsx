@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import './ChatBox.css'; // 경로 수정
+import './ChatBox.css';
+import { FaSearch } from 'react-icons/fa'; // Font Awesome Search Icon yarn add react-icons
 
 const ChatBox = () => {
   const [messages, setMessages] = useState([]);
@@ -36,6 +37,12 @@ const ChatBox = () => {
     });
   };
 
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      handleSend();
+    }
+  };
+
   const truncateLink = (link) => {
     const maxLength = 30;
     if (link.length <= maxLength) return link;
@@ -44,17 +51,6 @@ const ChatBox = () => {
 
   return (
     <div className="chat-box">
-      <div className="chat-settings">
-        <label>
-          범위:
-          <input
-            type="number"
-            value={topK}
-            onChange={(e) => setTopK(Number(e.target.value))}
-            min="1"
-          />
-        </label>
-      </div>
       <div className="chat-messages">
         {messages.map((msg, index) => (
           <div key={index} className={`chat-message ${msg.sender}`}>
@@ -70,14 +66,30 @@ const ChatBox = () => {
           </div>
         ))}
       </div>
-      <div className="chat-input">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="뭐였더라..."
-        />
-        <button onClick={handleSend}>Send</button>
+      <div className="chat-input-container">
+      <div className="chat-settings">
+          <label>
+            
+            <input
+              type="number"
+              value={topK}
+              onChange={(e) => setTopK(Number(e.target.value))}
+              min="1"
+            />
+          </label>
+        </div>
+        <div className="chat-input">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="뭐였더라..."
+          />
+          <button onClick={handleSend}>
+            <FaSearch /> {/* 돋보기 아이콘 추가 */}
+          </button>
+        </div>
       </div>
     </div>
   );

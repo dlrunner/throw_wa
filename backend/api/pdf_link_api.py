@@ -25,6 +25,7 @@ db.create_table()
 
 class PDFUrl(BaseModel):
     url: str  # pdf_path에서 url로 변경
+    type : str = "PDF"
 
 def extract_text_from_local_pdf(pdf_url: str) -> str:
     # URL 디코딩
@@ -64,7 +65,8 @@ async def extract_local_pdf(pdf_url: PDFUrl):
         payload = {
         "id": str(id),
         "embedding" : embedding,
-        "link" : pdf_url.url
+        "link" : pdf_url.url,
+        "type" : pdf_url.type
     }
 
         spring_url = "http://localhost:8080/api/embedding"

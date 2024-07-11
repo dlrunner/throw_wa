@@ -17,6 +17,7 @@ class VectorUpsertRequest(BaseModel):
     id: str
     embedding: list[float]
     link: str
+    type: str
 
 @router.post("/vector_upsert")
 async def vector_upsert(request: VectorUpsertRequest):
@@ -26,7 +27,7 @@ async def vector_upsert(request: VectorUpsertRequest):
         vector_db.upsert_vector(
             vector_id=request.id,
             vector=request.embedding,
-            metadata={"link": request.link}
+            metadata={"link": request.link, "type": request.type}
         )
 
         return {"success": True}
