@@ -18,18 +18,20 @@ text_model = AutoModel.from_pretrained(model_name)
 device = torch.device("cpu")
 
 def fixed_get_imports(filename: str | os.PathLike) -> list[str]:
-    if not str(filename).endswith("/modeling_florence2.py"):
-        return get_imports(filename)
     imports = get_imports(filename)
-    if "flash_attn" in imports:
+    if str(filename).endswith("modeling_florence2.py") and "flash_attn" in imports:
         imports.remove("flash_attn")
     return imports
 
-with patch("transformers.dynamic_module_utils.get_imports", fixed_get_imports):
-    florence_model = AutoModelForCausalLM.from_pretrained("microsoft/Florence-2-base", trust_remote_code=True)
-    florence_processor = AutoProcessor.from_pretrained("microsoft/Florence-2-base", trust_remote_code=True)
+def load_florence_model():
+    with patch("transformers.dynamic_module_utils.get_imports", fixed_get_imports):
+        florence_model = AutoModelForCausalLM.from_pretrained("microsoft/Florence-2-base", trust_remote_code=True)
+        florence_processor = AutoProcessor.from_pretrained("microsoft/Florence-2-base", trust_remote_code=True)
+    florence_model.to(device)
+    return florence_model, florence_processor
 
-florence_model.to(device)
+# Florence 모델과 프로세서를 로드
+florence_model, florence_processor = load_florence_model()
 
 # 이미지 캡셔닝 및 텍스트 임베딩 함수
 def imagecaption(image_url: str):
