@@ -17,6 +17,7 @@ router = APIRouter()
 class TranscribeRequest(BaseModel):
     url: str
     language: str = "ko"
+    type: str = "youtube"
 
 # MySQL 데이터베이스 연결 설정
 db_config = {
@@ -79,7 +80,8 @@ async def transcribe(request: TranscribeRequest):
         payload = {
         "id": str(id),
         "embedding" : embedding,
-        "link" : request.url
+        "link" : request.url,
+        "type" : request.type
     }
 
         spring_url = "http://localhost:8080/api/embedding"
@@ -96,7 +98,9 @@ async def transcribe(request: TranscribeRequest):
             "success": True,
             "content": result,
             "video_id": video_id,
-            "embedding": embedding}
+            "embedding": embedding,
+            "type" : request.type
+            }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

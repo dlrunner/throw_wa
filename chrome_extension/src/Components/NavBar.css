@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: #333;
+  background-color: #2c2f33; /* 디스코드 어두운 배경 색상 */
   padding: 10px;
   border-radius: 10px;
 }
@@ -16,12 +16,28 @@
 }
 
 .nav-button {
-  background-color: #444;
+  background-color: #7289da; /* 디스코드 강조 색상 */
   color: white;
   border: none;
   padding: 10px 20px;
   cursor: pointer;
   margin-right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fas-button{
+  background-color: #2c2f33; /* 디스코드 어두운 배경 */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  margin-right: 10px;
+  margin-left: 15px;
+}
+
+.nav-button i {
+  margin-right: 5px; /* 아이콘과 텍스트 간격 조정 */
 }
 
 .nav-button:hover {
@@ -57,4 +73,15 @@
   width: 100%;
   display: flex;
   justify-content: center;
+}
+
+.url-input {
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  margin-right: 10px;
+  flex-grow: 1;
+  background-color: #23272a; /* 디스코드 어두운 입력 배경 */
+  color: white;
+  width: 30px;
 }
