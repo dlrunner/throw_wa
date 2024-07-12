@@ -5,19 +5,19 @@ import whisper
 import os
 from fastapi.middleware.cors import CORSMiddleware
 import mysql.connector
-import faiss
-from sentence_transformers import SentenceTransformer
-import numpy as np
-from database.database import Database
 from transformers import AutoModel, AutoTokenizer
 import torch
+from database.database import Database
 from database.vector_db import VectorDatabase
+import httpx
+from models.embedding import embed_text  # 임베딩 함수 호출
 
 router = APIRouter()
 
 class TranscribeRequest(BaseModel):
     url: str
     language: str = "ko"
+    type: str = "youtube"
 
 # MySQL 데이터베이스 연결 설정
 db_config = {
@@ -29,19 +29,6 @@ db_config = {
 db = Database(**db_config)
 db.connect()
 db.create_table()
-
-# 벡터 데이터베이스 설정
-vector_db = VectorDatabase(
-    api_key="a662c43c-d2dd-4e2d-b187-604b1cf9414c",
-    environment="us-east-1",
-    index_name="dlrunner",
-    dimension=384
-)
-
-# 텍스트 임베딩 모델
-model_name = "intfloat/multilingual-e5-small"
-processor = AutoTokenizer.from_pretrained(model_name)
-model = AutoModel.from_pretrained(model_name)
 
 # 유튜브 오디오 다운로드 함수 pip install yt_dlp 설치 필요
 def download_audio(youtube_url, output_path):
@@ -83,24 +70,6 @@ def process_youtube_link(youtube_url, language="ko"):
 
     return content, video_id
 
-# 텍스트 임베딩 함수
-def embed_text(text: str) -> list:
-    # 텍스트를 최대 길이 77로 분할
-    max_length = 77
-    text_chunks = [text[i:i+max_length] for i in range(0, len(text), max_length)]
-    
-    embeddings = []
-    for chunk in text_chunks:
-        inputs = processor(chunk, return_tensors="pt", padding=True, truncation=True)
-        with torch.no_grad():
-            outputs = model(**inputs)
-            text_features = outputs.last_hidden_state.mean(dim=1)  # BERT 모델의 임베딩 추출 방식
-        embeddings.append(text_features.squeeze().cpu().numpy())
-    
-    # 모든 청크 임베딩의 평균을 계산
-    mean_embedding = np.mean(embeddings, axis=0)
-    return mean_embedding.tolist()
-
 # 엔드포인트
 @router.post("/youtube_text")
 async def transcribe(request: TranscribeRequest):
@@ -108,13 +77,30 @@ async def transcribe(request: TranscribeRequest):
         result, video_id = process_youtube_link(request.url, request.language)
         embedding = embed_text(result)
 
-        # 벡터 디비에 upsert
-        vector_db.upsert_vector(
-            vector_id=str(video_id),
-            vector=embedding,
-            metadata={"link": request.url}
-        )
-        return {"success": True, "content": result, "video_id": video_id, "embedding": embedding}
+        payload = {
+        "id": str(id),
+        "embedding" : embedding,
+        "link" : request.url,
+        "type" : request.type
+    }
+
+        spring_url = "http://localhost:8080/api/embedding"
+        async with httpx.AsyncClient() as client:
+            try:
+                spring_response = await client.post(spring_url, json=payload)
+                spring_response.raise_for_status()
+                print(f"Spring Boot 서버로의 연결이 성공하였습니다. 응답 코드: {spring_response.status_code}")
+            except httpx.RequestError as e:
+                print(f"Error connecting to Spring Boot server: {str(e)}")
+                raise HTTPException(status_code=500, detail="스프링 서버와 연결할 수 없습니다.")
+            
+        return {
+            "success": True,
+            "content": result,
+            "video_id": video_id,
+            "embedding": embedding,
+            "type" : request.type
+            }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

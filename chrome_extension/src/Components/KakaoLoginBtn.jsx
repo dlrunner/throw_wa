@@ -29,7 +29,6 @@ const LoginForm = () => {
 
   return (
     <div style={{ textAlign: 'center', marginTop: '20px' }}>
-      <img src="/logo/logo.png" style={{ width: '150px', height: 'auto', marginBottom: '20px' }} />
     <div style={{ maxWidth: '400px', margin: 'auto', padding: '1em', border: '1px solid #ccc', borderRadius: '15px' }}>
       <h2>Login</h2>
       <form onSubmit={handleSubmit}>

@@ -4,7 +4,9 @@
   "version": "1.0",
   "description": "링크를 저장합니다.",
   "permissions": [
-    "activeTab"
+    "activeTab",
+    "tabs",
+    "<all_urls>"
   ],
   "host_permissions": [
     "http://localhost:*/*"

@@ -51,7 +51,7 @@ class Database:
             self.conn.rollback()
             raise
     
-    def insert_crawling(self, url, content, title) :
+    def insert_crawling(self, url, title, content ) :
         try:
             self.cursor.execute("INSERT INTO test_table (url, title, content) VALUES (%s, %s, %s)",(url, title, content))
             self.conn.commit()

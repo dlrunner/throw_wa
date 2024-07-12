@@ -4,6 +4,7 @@ from transformers import AutoTokenizer, AutoModel
 import torch
 import pinecone
 import numpy as np
+from models.embedding import embed_text  # 임베딩 함수 호출
 
 class QueryRequest(BaseModel):
     text: str
@@ -32,34 +33,11 @@ if index_name not in pc.list_indexes().names():
 
 index = pc.Index(index_name)
 
-# 텍스트 임베딩 모델
-model_name = "intfloat/multilingual-e5-small"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModel.from_pretrained(model_name)
-
-# 텍스트 임베딩 함수
-def embed_text(text: str) -> list:
-    # 텍스트를 최대 길이 77로 분할
-    max_length = 77
-    text_chunks = [text[i:i+max_length] for i in range(0, len(text), max_length)]
-    
-    embeddings = []
-    for chunk in text_chunks:
-        inputs = tokenizer(chunk, return_tensors="pt", padding=True, truncation=True)
-        with torch.no_grad():
-            outputs = model(**inputs)
-            # BERT 모델의 출력에서 문장 임베딩을 생성 (평균 풀링)
-            text_features = outputs.last_hidden_state.mean(dim=1)
-        embeddings.append(text_features.squeeze().cpu().numpy())
-    
-    # 모든 청크 임베딩의 평균을 계산
-    mean_embedding = np.mean(embeddings, axis=0)
-    return mean_embedding.tolist()
 
 @router.post("/search")
 async def search(request: QueryRequest):
     try:
-        query_vector = embed_text(request.text)
+        query_vector = embed_text(request.text) # 텍스트임베딩 호출
 
         result = index.query(
             vector=query_vector,
@@ -71,8 +49,8 @@ async def search(request: QueryRequest):
             "matches": [
                 {
                     "id": match['id'], 
-                    "유사도": match['score'],
-                    "링크": match['metadata'] if 'metadata' in match else {}
+                    "score": match['score'],
+                    "link": match['metadata']['link'] if 'metadata' in match else {}
                 }
                 for match in result['matches']
             ]
