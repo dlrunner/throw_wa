@@ -59,6 +59,13 @@ const LoginForm = () => {
       </form>
       <button onClick={handleSignUp} style={{ width: '100%', padding: '.5em', background: '#007bff', color: '#fff', border: 'none', borderRadius: '5px', marginTop: '10px'}}>회원가입</button>
       <button onClick={handleHome} style={{ width: '100%', padding: '.5em', background: '#007bff', color: '#fff', border: 'none', borderRadius: '5px', marginTop: '10px'}}>홈으로</button>
+      <div>
+        <a href='{http://localhost:8080/oauth2/authorization/kakao}'>
+          <img
+            src="https://developers.kakao.com/tool/resource/static/img/button/login/full/ko/kakao_login_medium_narrow.png"
+          />
+        </a>
+      </div>
     </div>
     </div>
   );
