@@ -1,7 +1,10 @@
+// NavBar.js
+
 import React, { useState } from 'react';
 import '../Components/NavBar.css';
 import ChatBox from './ChatBox';
-import '@fortawesome/fontawesome-free/css/all.min.css'; // Font Awesome CSS 추가 yarn add @fortawesome/fontawesome-free
+import BottomBox from './BottomBox'; // 경로 수정
+import '@fortawesome/fontawesome-free/css/all.min.css';
 
 const NavBar = () => {
   const [result, setResult] = useState('');
@@ -116,6 +119,9 @@ const NavBar = () => {
       </div>
       <div className="chat-box-container">
         <ChatBox />
+      </div>
+      <div className='bottom-box-container'>
+      <BottomBox /> {/* BottomBox 컴포넌트 추가 */}
       </div>
     </div>
   );

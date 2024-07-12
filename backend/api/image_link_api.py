@@ -21,6 +21,7 @@ db.create_table()
 class ImageEmbRequest(BaseModel):
     url: str
     type: str = "image"
+    date: str
 
 @router.post("/image_embedding")
 async def get_image_embedding_endpoint(request: ImageEmbRequest):
@@ -50,7 +51,8 @@ async def get_image_embedding_endpoint(request: ImageEmbRequest):
             "id": str(image_id),
             "embedding": embedding,
             "link": request.url,
-            "type": request.type
+            "type": request.type,
+            "date": request.date
         }
 
         spring_url = "http://localhost:8080/api/embedding"
