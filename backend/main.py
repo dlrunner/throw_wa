@@ -15,7 +15,7 @@ app = FastAPI()
 origins = [
     "http://localhost:8080",
     "http://localhost:5173",
-    "chrome-extension://mmkmaanmabhndogfaampmmgfjapaghmd"
+    "chrome-extension://bhgkbbadipohilenmjoaclooofdemmke"
 ]
 
 app.add_middleware(
