@@ -29,6 +29,8 @@ class VectorDatabase:
     def upsert_vector(self, vector_id: str, vector: list, metadata: dict):
         try:
             self.create_index_if_not_exists()
+            if 'date' in metadata:
+                metadata['date'] = metadata["date"].split('T')[0]
             self.index.upsert(
                 vectors=[{
                     "id": vector_id,
@@ -52,3 +54,18 @@ class VectorDatabase:
             return response
         except PineconeException as e:
             raise ValueError(f"Failed to query vector: {str(e)}")
+        
+    def search_by_metadata(self, metadata):
+        try:
+            self.create_index_if_not_exists()
+            # zero vector의 차원을 인덱스의 차원과 일치시키기
+            zero_vector = [0.0] * self.dimension
+            response = self.index.query(
+                vector=zero_vector,
+                top_k=10,
+                include_metadata=True,
+                filter=metadata
+            )
+            return response
+        except PineconeException as e:
+            raise ValueError(f"Failed to search by metadata: {str(e)}")

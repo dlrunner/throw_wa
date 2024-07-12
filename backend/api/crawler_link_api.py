@@ -41,6 +41,7 @@ def crawl_data(url):
 class Bookmark(BaseModel):
     url: str
     type: str = "web"
+    date: str
 
 # Add bookmark endpoint
 @router.post("/crawler")
@@ -57,7 +58,8 @@ async def add_bookmark(bookmark: Bookmark):
         "id": str(id),
         "embedding" : embedding,
         "link" : url,
-        "type" : bookmark.type
+        "type" : bookmark.type,
+        "date" : bookmark.date
     }
 
     spring_url = "http://localhost:8080/api/embedding"
@@ -78,5 +80,6 @@ async def add_bookmark(bookmark: Bookmark):
         "title": title,
         "content_length": len(content),
         "content": content,
-        "embedding": embedding
+        "embedding": embedding,
+        "date": bookmark.date
     }
