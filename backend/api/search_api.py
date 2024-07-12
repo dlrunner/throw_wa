@@ -23,7 +23,7 @@ index_name = 'dlrunner'
 if index_name not in pc.list_indexes().names():
     pc.create_index(
         name=index_name,
-        dimension=768,  # clip 임베딩 벡터의 차원
+        dimension=768,  
         metric='cosine',  # 유사도 측정 방법
         spec=pinecone.ServerlessSpec(
             cloud='aws',

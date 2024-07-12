@@ -1,6 +1,6 @@
 import os
 import requests
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from io import BytesIO
 from transformers import AutoModelForCausalLM, AutoProcessor, AutoTokenizer, AutoModel
 import torch
@@ -17,6 +17,8 @@ text_model = AutoModel.from_pretrained(model_name)
 
 # Googletrans 번역기 설정
 translator = Translator()
+#pip install googletrans==4.0.0-rc1
+
 
 # Florence 모델 설정
 device = torch.device("cpu")
@@ -41,7 +43,11 @@ florence_model, florence_processor = load_florence_model()
 def imagecaption(image_url: str):
     try:
         response = requests.get(image_url)
-        image = Image.open(BytesIO(response.content))
+        response.raise_for_status()  # HTTP 오류가 있는지 확인
+        try:
+            image = Image.open(BytesIO(response.content))
+        except UnidentifiedImageError:
+            raise HTTPException(status_code=400, detail="Unidentified image format")
 
         # 이미지 캡셔닝
         prompt = "<MORE_DETAILED_CAPTION>"
@@ -84,7 +90,14 @@ def embed_text(text: str) -> list:
     mean_embedding = np.mean(embeddings, axis=0)
     return mean_embedding.tolist()
 
+# 불필요한 단어 제거 함수
+def removeword(text: str) -> str:
+    unnecessary = ["이미지는", "보여줍니다"]
+    for part in unnecessary:
+        text = text.replace(part, "")
+    return text.strip()
+
 # Googletrans 번역 함수
 def translate_text(text: str) -> str:
     translated = translator.translate(text, dest='ko')
-    return translated.text
+    return removeword(translated.text)
