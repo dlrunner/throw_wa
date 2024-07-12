@@ -1,5 +1,5 @@
-import requests
 import os
+import requests
 from PIL import Image
 from io import BytesIO
 from transformers import AutoModelForCausalLM, AutoProcessor, AutoTokenizer, AutoModel
@@ -8,11 +8,15 @@ import numpy as np
 from unittest.mock import patch
 from transformers.dynamic_module_utils import get_imports
 from fastapi import HTTPException
+from googletrans import Translator
 
 # 텍스트 임베딩 모델 설정
 model_name = "intfloat/multilingual-e5-small"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 text_model = AutoModel.from_pretrained(model_name)
+
+# Googletrans 번역기 설정
+translator = Translator()
 
 # Florence 모델 설정
 device = torch.device("cpu")
@@ -33,7 +37,7 @@ def load_florence_model():
 # Florence 모델과 프로세서를 로드
 florence_model, florence_processor = load_florence_model()
 
-# 이미지 캡셔닝 및 텍스트 임베딩 함수
+# 이미지 캡셔닝 함수
 def imagecaption(image_url: str):
     try:
         response = requests.get(image_url)
@@ -48,7 +52,7 @@ def imagecaption(image_url: str):
             generated_ids = florence_model.generate(
                 input_ids=inputs["input_ids"],
                 pixel_values=inputs["pixel_values"],
-                max_new_tokens=50,
+                max_new_tokens=35,
                 num_beams=3,
             )
 
@@ -56,13 +60,7 @@ def imagecaption(image_url: str):
         parsed_answer = florence_processor.post_process_generation(generated_text, task=prompt, image_size=(image.width, image.height))
         caption = parsed_answer.get("<MORE_DETAILED_CAPTION>", "No caption generated")
 
-        # 텍스트 임베딩 (원본 영어 캡션 사용)
-        text_inputs = tokenizer(text=[caption], return_tensors="pt", padding=True).to(device)
-        with torch.no_grad():
-            text_outputs = text_model(**text_inputs)
-        text_embedding = text_outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
-
-        return caption, text_embedding.tolist()
+        return caption
 
     except Exception as e:
         print(f"오류 발생: {str(e)}")
@@ -79,9 +77,14 @@ def embed_text(text: str) -> list:
         inputs = tokenizer(chunk, return_tensors="pt", padding=True, truncation=True)
         with torch.no_grad():
             outputs = text_model(**inputs)
-            text_features = outputs.last_hidden_state.mean(dim=1)  # BERT 모델의 임베딩 추출 방식
+            text_features = outputs.last_hidden_state.mean(dim=1)
         embeddings.append(text_features.squeeze().cpu().numpy())
     
     # 모든 청크 임베딩의 평균을 계산
     mean_embedding = np.mean(embeddings, axis=0)
     return mean_embedding.tolist()
+
+# Googletrans 번역 함수
+def translate_text(text: str) -> str:
+    translated = translator.translate(text, dest='ko')
+    return translated.text
