@@ -17,7 +17,8 @@ class VectorUpsertRequest(BaseModel):
     id: str
     embedding: list[float]
     link: str
-    type: str
+    type: str # 유튜브인지 웹인지 pdf인지 파악하기 위한 용도
+    date: str # 링크 업로드 날짜 
 
 @router.post("/vector_upsert")
 async def vector_upsert(request: VectorUpsertRequest):
@@ -27,7 +28,11 @@ async def vector_upsert(request: VectorUpsertRequest):
         vector_db.upsert_vector(
             vector_id=request.id,
             vector=request.embedding,
-            metadata={"link": request.link, "type": request.type}
+            metadata={
+                "link": request.link,
+                "type": request.type,
+                "date": request.date
+                }
         )
 
         return {"success": True}

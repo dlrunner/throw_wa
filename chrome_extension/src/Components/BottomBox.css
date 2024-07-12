@@ -1,0 +1,26 @@
+/* BottomBox.css */
+
+.bottom-box {
+    display: flex;
+    justify-content: space-between; /* 버튼들을 양 끝으로 보내기 위해 space-between 사용 */
+    padding: 10px;
+    background-color: #2c2f33; /* 챗박스 배경색과 어울리게 수정 */
+  }
+  
+  .bottom-button {
+    padding: 10px 20px;
+    font-size: 15px;
+    cursor: pointer;
+    background-color: #7289da; /* 버튼 배경색을 Discord 스타일로 수정 */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+    /* 각 버튼의 마진을 조정하여 양 끝에 딱 붙게 */
+    margin: 10px;
+  }
+  
+  .bottom-button:hover {
+    background-color: #99aab5; /* 호버 시 색상 변경 */
+  }
+  
