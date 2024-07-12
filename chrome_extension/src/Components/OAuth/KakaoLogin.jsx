@@ -23,13 +23,13 @@ const KakaoLogin = () => {
 
   return (
     <>
-      <div>
+      {/* <div>
         <a href='{http://localhost:8080/oauth2/authorization/kakao}'>
           <img
             src="https://developers.kakao.com/tool/resource/static/img/button/login/full/ko/kakao_login_medium_narrow.png"
           />
         </a>
-      </div>
+      </div> */}
     </>
   )
 }
