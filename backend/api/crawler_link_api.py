@@ -8,7 +8,6 @@ from database.database import Database
 from database.vector_db import VectorDatabase
 import numpy as np
 import httpx
-from datetime import datetime
 
 router = APIRouter()
 
@@ -42,7 +41,7 @@ def crawl_data(url):
 class Bookmark(BaseModel):
     url: str
     type: str = "web"
-    date: datetime
+    date: str
 
 # Add bookmark endpoint
 @router.post("/crawler")
@@ -60,7 +59,7 @@ async def add_bookmark(bookmark: Bookmark):
         "embedding" : embedding,
         "link" : url,
         "type" : bookmark.type,
-        "date" : bookmark.date.isoformat()
+        "date" : bookmark.date
     }
 
     spring_url = "http://localhost:8080/api/embedding"
@@ -81,5 +80,6 @@ async def add_bookmark(bookmark: Bookmark):
         "title": title,
         "content_length": len(content),
         "content": content,
-        "embedding": embedding
+        "embedding": embedding,
+        "date": bookmark.date
     }

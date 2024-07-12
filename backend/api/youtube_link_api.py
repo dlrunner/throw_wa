@@ -18,6 +18,7 @@ class TranscribeRequest(BaseModel):
     url: str
     language: str = "ko"
     type: str = "youtube"
+    date: str
 
 # MySQL 데이터베이스 연결 설정
 db_config = {
@@ -81,7 +82,8 @@ async def transcribe(request: TranscribeRequest):
         "id": str(id),
         "embedding" : embedding,
         "link" : request.url,
-        "type" : request.type
+        "type" : request.type,
+        "date" : request.date
     }
 
         spring_url = "http://localhost:8080/api/embedding"
