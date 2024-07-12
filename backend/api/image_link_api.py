@@ -1,7 +1,6 @@
-# api/image_link_api.py
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from models.embedding import imagecaption, embed_text  # 임베딩 함수 호출
+from models.embedding import imagecaption, embed_text, translate_text  # 번역 함수 수정
 from database.database import Database
 from database.vector_db import VectorDatabase
 import httpx
@@ -26,28 +25,32 @@ class ImageEmbRequest(BaseModel):
 @router.post("/image_embedding")
 async def get_image_embedding_endpoint(request: ImageEmbRequest):
     try:
-        # 이미지 캡셔닝 및 텍스트 임베딩 함수 호출
-        caption, _ = imagecaption(request.url)
+        # 이미지 캡셔닝 및 텍스트 생성
+        caption = imagecaption(request.url)
         
-        # E5 모델을 사용하여 텍스트 임베딩
-        embedding = embed_text(caption)
+        # 번역 텍스트 생성
+        transcaption = translate_text(caption)
+        
+        # E5 모델을 사용하여 번역된 한글 텍스트 임베딩
+        embedding = embed_text(transcaption)
 
-        # 데이터베이스에 결과 저장 (원본 영어 캡션만 저장)
-        id = db.insert_image(request.url, caption)
+        # 데이터베이스에 결과 저장 (번역된 한국어 캡셔닝만 저장)
+        image_id = db.insert_image(request.url, transcaption)
 
         # 결과 준비
         results = {
             "success": True,
             "image_url": request.url,
-            "이미지 캡셔닝 결과": caption,
+            "original_caption": caption,
+            "translated_caption": transcaption,
             "텍스트 임베딩값": embedding
         }
 
         payload = {
-            "id": str(id),
+            "id": str(image_id),
             "embedding": embedding,
             "link": request.url,
-            "type" : request.type
+            "type": request.type
         }
 
         spring_url = "http://localhost:8080/api/embedding"
