@@ -1,10 +1,11 @@
 .onboarding-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background-color: #f0f0f0;
-  }
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 90vh;
+  background-color: #f0f0f0;
+  width: 45vh;
+}
   
   .logo {
     width: 150px;
