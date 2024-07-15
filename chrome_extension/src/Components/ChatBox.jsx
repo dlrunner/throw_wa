@@ -10,9 +10,7 @@ const ChatBox = () => {
   const handleSend = () => {
     if (input.trim() === '') return;
 
-    const userMessage = { text: input, sender: 'user' };
-    setMessages(prevMessages => [...prevMessages, userMessage]);
-    setInput('');
+    setMessages([]);
 
     fetch('http://localhost:8000/api/search', {
       method: 'POST',
@@ -51,21 +49,6 @@ const ChatBox = () => {
 
   return (
     <div className="chat-box">
-      <div className="chat-messages">
-        {messages.map((msg, index) => (
-          <div key={index} className={`chat-message ${msg.sender}`}>
-            {msg.link ? (
-              <>
-              {msg.text}:<a href={msg.link} target='_blank' rel='noopener noreferrer' title={msg.link}>
-                {truncateLink(msg.link)}
-              </a>
-              </>
-            ) : (
-              msg.text
-            )}
-          </div>
-        ))}
-      </div>
       <div className="chat-input-container">
       <div className="chat-settings">
           <label>
@@ -90,6 +73,21 @@ const ChatBox = () => {
             <FaSearch /> {/* 돋보기 아이콘 추가 */}
           </button>
         </div>
+      </div>
+      <div className="chat-messages">
+        {messages.map((msg, index) => (
+          <div key={index} className={`chat-message ${msg.sender}`}>
+            {msg.link ? (
+              <>
+              {msg.text}:<a href={msg.link} target='_blank' rel='noopener noreferrer' title={msg.link}>
+                {truncateLink(msg.link)}
+              </a>
+              </>
+            ) : (
+              msg.text
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
