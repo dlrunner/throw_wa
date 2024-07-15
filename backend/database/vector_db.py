@@ -1,5 +1,6 @@
 from pinecone import Pinecone, ServerlessSpec
 from pinecone.exceptions import PineconeException
+from datetime import datetime, timedelta
 
 class VectorDatabase:
     def __init__(self, api_key: str, environment: str, index_name: str, dimension: int):
@@ -69,3 +70,17 @@ class VectorDatabase:
             return response
         except PineconeException as e:
             raise ValueError(f"Failed to search by metadata: {str(e)}")
+        
+    def query_by_metadata(self, metadata_filter: dict):
+        try:
+            self.create_index_if_not_exists()
+            zero_vector = [0.0] * self.dimension
+            response = self.index.query(
+                vector=zero_vector,
+                top_k=10,
+                include_metadata=True,
+                filter=metadata_filter
+            )
+            return response
+        except PineconeException as e:
+            raise ValueError(f"Failed to query vector: {str(e)}")

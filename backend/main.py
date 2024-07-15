@@ -10,6 +10,7 @@ from api.search_api import router as search_router
 from api.image_link_api import router as image_router
 from api.upsert_api import router as upsert_router
 from api.bookmark_record_api import router as record_router
+from api.recommend_api import router as recommend_router
 
 app = FastAPI()
 
@@ -30,6 +31,7 @@ app.include_router(search_router, prefix="/api")
 app.include_router(image_router, prefix="/api")
 app.include_router(upsert_router, prefix="/api")
 app.include_router(record_router, prefix="/api")
+app.include_router(recommend_router, prefix="/api")
 
 # 앱 실행 코드
 if __name__ == "__main__":
