@@ -70,10 +70,12 @@ const onSocialLoginBtnHandler = () => {
           <button onClick={handleHome} style={{ width: '100%', padding: '.5em', background: '#007bff', color: '#fff', border: 'none', borderRadius: '5px', marginTop: '10px' }}>홈으로</button>
         </div>
       </div>
-      <div className='kakao-sign-in-btn' onClick={onSocialLoginBtnHandler}>
+      <div className='kakao-sign-in-btn'>
+      <button className="kakao-sign-in-btn" onClick={onSocialLoginBtnHandler} style={{ border: 'none', background: 'none', padding: 0 }}>
         <img
           src="https://developers.kakao.com/tool/resource/static/img/button/login/full/ko/kakao_login_medium_narrow.png"
         />
+        </button>
       </div>
     </>
   );
