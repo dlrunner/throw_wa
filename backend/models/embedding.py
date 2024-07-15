@@ -1,6 +1,6 @@
 import os
 import requests
-from PIL import Image, UnidentifiedImageError
+from PIL import Image
 from io import BytesIO
 from transformers import AutoModelForCausalLM, AutoProcessor, AutoTokenizer, AutoModel
 import torch
@@ -18,7 +18,6 @@ text_model = AutoModel.from_pretrained(model_name)
 # Googletrans 번역기 설정
 translator = Translator()
 #pip install googletrans==4.0.0-rc1
-
 
 # Florence 모델 설정
 device = torch.device("cpu")
@@ -42,12 +41,12 @@ florence_model, florence_processor = load_florence_model()
 # 이미지 캡셔닝 함수
 def imagecaption(image_url: str):
     try:
-        response = requests.get(image_url)
-        response.raise_for_status()  # HTTP 오류가 있는지 확인
-        try:
-            image = Image.open(BytesIO(response.content))
-        except UnidentifiedImageError:
-            raise HTTPException(status_code=400, detail="Unidentified image format")
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+        }
+        response = requests.get(image_url, headers=headers)
+        response.raise_for_status()
+        image = Image.open(BytesIO(response.content))
 
         # 이미지 캡셔닝
         prompt = "<MORE_DETAILED_CAPTION>"
@@ -68,6 +67,9 @@ def imagecaption(image_url: str):
 
         return caption
 
+    except requests.exceptions.RequestException as e:
+        print(f"HTTP 오류 발생: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"HTTP 오류: {str(e)}")
     except Exception as e:
         print(f"오류 발생: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
