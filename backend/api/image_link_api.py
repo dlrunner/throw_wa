@@ -6,6 +6,7 @@ from database.database import Database
 from database.vector_db import VectorDatabase
 import httpx
 from models.summary_text import generate_summary
+from models.keyword_text import keyword_extraction
 
 router = APIRouter()
 
@@ -41,6 +42,7 @@ async def get_image_embedding_endpoint(request: ImageEmbRequest):
         image_id = db.insert_image(request.url, transcaption)
 
         summary_text = await generate_summary(transcaption)
+        keyword = await keyword_extraction(summary_text)
 
         # 결과 준비
         results = {
@@ -48,6 +50,7 @@ async def get_image_embedding_endpoint(request: ImageEmbRequest):
             "image_url": request.url,
             "original_caption": caption,
             "요약": summary_text,
+            "keyword": keyword,
             "translated_caption": transcaption,
             "텍스트 임베딩값": embedding
         }
@@ -57,7 +60,9 @@ async def get_image_embedding_endpoint(request: ImageEmbRequest):
             "embedding": embedding,
             "link": request.url,
             "type": request.type,
-            "date": request.date
+            "date": request.date,
+            "summary": str(summary_text),
+            "keyword" : str(keyword)
         }
 
         spring_url = "http://localhost:8080/api/embedding"

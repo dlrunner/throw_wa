@@ -119,3 +119,9 @@
   background-color: #23272a;
   color: white;
 }
+.message-summary {
+  margin-top: 5px;
+  font-size: 0.9em;
+  color: #ffffff;
+  white-space: pre-wrap;
+}

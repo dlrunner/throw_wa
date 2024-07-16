@@ -7,11 +7,13 @@ const BottomBox = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [recommendations, setRecommendations] = useState([]);
 
   const handleClick = async (buttonNumber) => {
     if (buttonNumber === 1) {
       setLoading(true);
       setError(null);
+      setRecommendations([]);
       try {
         const response = await fetch('http://localhost:8000/api/recent-week');
         if (!response.ok) {
@@ -20,6 +22,22 @@ const BottomBox = () => {
         const result = await response.json();
         const aggregatedData = aggregateData(result);
         setData(aggregatedData);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    } else if (buttonNumber === 2) {
+      setLoading(true);
+      setError(null);
+      setData(null);
+      try {
+        const response = await fetch('http://localhost:8000/api/recommend');
+        if (!response.ok) {
+          throw new Error('Failed to fetch recommendations');
+        }
+        const result = await response.json();
+        setRecommendations(result.recommendations);
       } catch (error) {
         setError(error.message);
       } finally {
@@ -59,6 +77,7 @@ const BottomBox = () => {
       ],
     };
   };
+
   const truncateLink = (url) => {
     const maxLength = 50;
     if (url.length <= maxLength) return url;
@@ -89,6 +108,19 @@ const BottomBox = () => {
               </div>
             ))}
           </div>
+        </div>
+      )}
+      {recommendations.length > 0 && (
+        <div className="recommendations">
+          <h3>추천 콘텐츠</h3>
+          <ul>
+            {recommendations.map((rec, index) => (
+              <li key={index}>
+                <a href={rec.link} target="_blank" rel="noopener noreferrer">{truncateLink(rec.link)}</a>
+                <p dangerouslySetInnerHTML={{ __html: rec.recommendation.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>') }}></p>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

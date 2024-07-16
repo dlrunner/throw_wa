@@ -11,6 +11,8 @@ from database.database import Database
 from database.vector_db import VectorDatabase
 import httpx
 from models.embedding import embed_text  # 임베딩 함수 호출
+from models.summary_text import generate_summary
+from models.keyword_text import keyword_extraction
 
 router = APIRouter()
 
@@ -78,12 +80,17 @@ async def transcribe(request: TranscribeRequest):
         result, video_id = process_youtube_link(request.url, request.language)
         embedding = embed_text(result)
 
+        summary_text = await generate_summary(result)
+        keyword = await keyword_extraction(summary_text)
+
         payload = {
         "id": str(id),
         "embedding" : embedding,
         "link" : request.url,
         "type" : request.type,
-        "date" : request.date
+        "date" : request.date,
+        "summary": str(summary_text),
+        "keyword" : str(keyword)
     }
 
         spring_url = "http://localhost:8080/api/embedding"
@@ -99,6 +106,8 @@ async def transcribe(request: TranscribeRequest):
         return {
             "success": True,
             "content": result,
+            "요약" : summary_text,
+            "keyword" : keyword,
             "video_id": video_id,
             "embedding": embedding,
             "type" : request.type
