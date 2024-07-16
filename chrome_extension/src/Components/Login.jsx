@@ -1,8 +1,9 @@
 import axios from 'axios';
 import React, { useState } from 'react';
-import { Button, Form, FormControl } from 'react-bootstrap';
+import { Form, FormControl } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { KAKAO_AUTH_URL } from './OAuth/OAuth';
+
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -15,7 +16,6 @@ const LoginForm = () => {
   const { email, password } = loginFrm;
 
   const onChangeFrm = (e) => {
-    console.log("onChangeFrm:", e);
     setLoginFrm({
       ...loginFrm,
       [e.target.name]: e.target.value,
@@ -24,7 +24,6 @@ const LoginForm = () => {
 
   const onLoginFrm = async (e) => {
     e.preventDefault();
-    console.log("onLoginFrm:", e);
     try {
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/login`,
@@ -42,40 +41,51 @@ const LoginForm = () => {
     }
   }
 
-const onSocialLoginBtnHandler = () => {
-  window.location.href = `${import.meta.env.VITE_API_URL}/oauth/kakao`;
-}
+  const onSocialLoginBtnHandler = () => {
+    window.location.href = `${import.meta.env.VITE_API_URL}/oauth/kakao`;
+  }
 
   const handleSignUp = () => {
-    navigate('/signUp')
+    navigate('/signUp');
   };
+
   const handleHome = () => {
-    navigate('/Home')
+    navigate('/Home');
   };
 
   return (
-    <>
-      <div style={{ textAlign: 'center', marginTop: '20px' }}>
-        <img src="/logo/logo.png" style={{ width: '150px', height: 'auto', marginBottom: '20px' }} />
-        <div style={{ maxWidth: '400px', margin: 'auto', padding: '1em', border: '1px solid #ccc', borderRadius: '15px' }}>
-          <h2>Login</h2>
-          <Form onSubmit={onLoginFrm}>
-            <FormControl name="email" className='my-3' placeholder='이메일' value={email} onChange={onChangeFrm}></FormControl>
-            <FormControl name="password" className='my-3' placeholder='비밀번호' value={password} onChange={onChangeFrm}></FormControl>
-            <div className='text-center'>
-              <button type="submit" style={{ width: '100%', padding: '.5em', background: '#007bff', color: '#fff', border: 'none', borderRadius: '5px' }}>로그인</button>
-            </div>
-          </Form>
-          <button onClick={handleSignUp} style={{ width: '100%', padding: '.5em', background: '#007bff', color: '#fff', border: 'none', borderRadius: '5px', marginTop: '10px' }}>회원가입</button>
-          <button onClick={handleHome} style={{ width: '100%', padding: '.5em', background: '#007bff', color: '#fff', border: 'none', borderRadius: '5px', marginTop: '10px' }}>홈으로</button>
-        </div>
+    <div className="login-container">
+      <img src="/logo/logo.png" className="logo-img" alt="Owl Logo" />
+      <div className="login-box">
+        <h2>Login</h2>
+        <Form onSubmit={onLoginFrm}>
+          <FormControl
+            name="email"
+            className='form-control'
+            placeholder='이메일'
+            value={email}
+            onChange={onChangeFrm}
+          />
+          <FormControl
+            name="password"
+            className='form-control'
+            placeholder='비밀번호'
+            type='password'
+            value={password}
+            onChange={onChangeFrm}
+          />
+          <button type="submit" className="submit-button">로그인</button>
+        </Form>
+        <button onClick={handleSignUp} className="sign-up-button">회원가입</button>
+        <button onClick={handleHome} className="home-button">홈으로</button>
       </div>
       <div className='kakao-sign-in-btn' onClick={onSocialLoginBtnHandler}>
         <img
           src="https://developers.kakao.com/tool/resource/static/img/button/login/full/ko/kakao_login_medium_narrow.png"
+          alt="Kakao Login"
         />
       </div>
-    </>
+    </div>
   );
 };
 
