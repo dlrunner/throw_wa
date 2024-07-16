@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import './BottomBox.css';
-import { Line } from 'react-chartjs-2';
+import { Line, Pie } from 'react-chartjs-2';
 import 'chart.js/auto'; // yarn add chart.js  //  yarn add react-chartjs-2 설치해야됨
 
 const BottomBox = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [recommendations, setRecommendations] = useState([]);
+  const [rankings, setRankings] = useState([]);
 
   const handleClick = async (buttonNumber) => {
     if (buttonNumber === 1) {
       setLoading(true);
       setError(null);
-      setRecommendations([]);
+      setRankings([]);
       try {
         const response = await fetch('http://localhost:8000/api/recent-week');
         if (!response.ok) {
@@ -32,12 +32,12 @@ const BottomBox = () => {
       setError(null);
       setData(null);
       try {
-        const response = await fetch('http://localhost:8000/api/recommend');
+        const response = await fetch('http://localhost:8000/api/keyword-rankings');
         if (!response.ok) {
-          throw new Error('Failed to fetch recommendations');
+          throw new Error('Failed to fetch keyword rankings');
         }
         const result = await response.json();
-        setRecommendations(result.recommendations);
+        setRankings(result.rankings);
       } catch (error) {
         setError(error.message);
       } finally {
@@ -78,6 +78,36 @@ const BottomBox = () => {
     };
   };
 
+  const getPieChartData = () => {
+    if (rankings.length === 0) return null;
+    const labels = rankings.map(rank => rank.keyword);
+    const values = rankings.map(rank => rank.count);
+    return {
+      labels,
+      datasets: [
+        {
+          data: values,
+          backgroundColor: [
+            '#FF6384',
+            '#36A2EB',
+            '#FFCE56',
+            '#4BC0C0',
+            '#9966FF',
+            '#FF9F40'
+          ],
+          hoverBackgroundColor: [
+            '#FF6384',
+            '#36A2EB',
+            '#FFCE56',
+            '#4BC0C0',
+            '#9966FF',
+            '#FF9F40'
+          ]
+        }
+      ]
+    };
+  };
+
   const truncateLink = (url) => {
     const maxLength = 50;
     if (url.length <= maxLength) return url;
@@ -110,17 +140,10 @@ const BottomBox = () => {
           </div>
         </div>
       )}
-      {recommendations.length > 0 && (
-        <div className="recommendations">
-          <h3>추천 콘텐츠</h3>
-          <ul>
-            {recommendations.map((rec, index) => (
-              <li key={index}>
-                <a href={rec.link} target="_blank" rel="noopener noreferrer">{truncateLink(rec.link)}</a>
-                <p dangerouslySetInnerHTML={{ __html: rec.recommendation.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>') }}></p>
-              </li>
-            ))}
-          </ul>
+      {rankings.length > 0 && (
+        <div className="rankings">
+          <h3>키워드 랭킹</h3>
+          <Pie data={getPieChartData()} />
         </div>
       )}
     </div>
