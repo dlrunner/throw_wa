@@ -21,11 +21,13 @@ const ChatBox = () => {
     })
     .then(response => response.json())
     .then(data => {
+      console.log('응답 데이터:', data); // 응답 데이터 확인을 위한 콘솔 출력
       const botMessages = data.matches.map(match => {
         return {
           text: '링크',
           sender: 'bot',
-          link: match.link
+          link: match.link, 
+          summary : match.summary
         };
       });
       setMessages(prevMessages => [...prevMessages, ...botMessages]);
@@ -82,6 +84,7 @@ const ChatBox = () => {
               {msg.text}:<a href={msg.link} target='_blank' rel='noopener noreferrer' title={msg.link}>
                 {truncateLink(msg.link)}
               </a>
+              <div className='message-summary'>{msg.summary}</div>
               </>
             ) : (
               msg.text
