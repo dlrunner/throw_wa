@@ -1,6 +1,7 @@
 from pinecone import Pinecone, ServerlessSpec
 from pinecone.exceptions import PineconeException
 from datetime import datetime, timedelta
+from collections import Counter
 
 class VectorDatabase:
     def __init__(self, api_key: str, environment: str, index_name: str, dimension: int):
@@ -84,3 +85,20 @@ class VectorDatabase:
             return response
         except PineconeException as e:
             raise ValueError(f"Failed to query vector: {str(e)}")
+        
+    def get_keword_rankings(self):
+        try:
+            response = self.query_by_metadata({})
+            if not response or not response['matches']:
+                return None
+            
+            keyword_counter = Counter()
+            for match in response['matches']:
+                keyword = match['metadata'].get('keyword')
+                if keyword:
+                    keyword_counter[keyword] += 1
+
+            sorted_keywords = keyword_counter.most_common()
+            return sorted_keywords
+        except Exception as e :
+            raise ValueError(f"키워드 별 랭킬 실패: {str(e)}")
