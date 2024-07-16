@@ -14,7 +14,7 @@ const NavBar = () => {
 
   const handleButtonClick = () => {
     setIsLoading(true);
-    setResult('북마크에 넣는중!');
+    setResult('마킹중!');
 
     chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
       const url = tabs[0].url;
@@ -36,7 +36,7 @@ const NavBar = () => {
         })
         .then(data => {
           if (data.success) {
-            setResult('북마크에 저장되었습니다!');
+            setResult('throw-wa에 저장되었습니다!');
           } else {
             throw new Error(data.message || '처리 실패');
           }
@@ -53,7 +53,7 @@ const NavBar = () => {
 
   const handleUrlSave = () => {
     setIsLoading(true);
-    setResult('북마크에 넣는중!');
+    setResult('마킹중');
 
     fetch('http://localhost:8080/api/url', {
       method: 'POST',
@@ -72,7 +72,7 @@ const NavBar = () => {
       })
       .then(data => {
         if (data.success) {
-          setResult('북마크에 저장되었습니다!');
+          setResult('throw-wa에 저장되었습니다!');
         } else {
           throw new Error(data.message || '처리 실패');
         }
@@ -90,7 +90,7 @@ const NavBar = () => {
 
   return (
     <div className="nav-bar-container">
-      <h2>무엇을 도와드릴까요</h2>
+      <h2>Throw-Wa Service</h2>
       <div className="nav-bar-actions">
         <button className="fas-button" onClick={() => setShowUrlInput(!showUrlInput)}>
           <i className="fas fa-sync-alt"></i> {/* 전환 아이콘 추가 */}
@@ -107,12 +107,12 @@ const NavBar = () => {
               className="url-input"
             />
             <button className="nav-button" onClick={handleUrlSave} disabled={isLoading}>
-              북마크
+              마킹
             </button>
           </>
         ) : (
           <button className="nav-button" onClick={handleButtonClick} disabled={isLoading}>
-            현재 탭 북마크
+            현재 탭 마킹
           </button>
         )}
         <div className="result-div" id="result">{result}</div>

@@ -69,7 +69,7 @@ const ChatBox = () => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="뭐였더라..."
+            placeholder="찾고싶은 링크의 내용을 적어주세요!"
           />
           <button onClick={handleSend}>
             <FaSearch /> {/* 돋보기 아이콘 추가 */}
