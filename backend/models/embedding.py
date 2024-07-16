@@ -8,7 +8,7 @@ import numpy as np
 from unittest.mock import patch
 from transformers.dynamic_module_utils import get_imports
 from fastapi import HTTPException
-from deep_translator import GoogleTranslator
+from googletrans import Translator
 
 # 텍스트 임베딩 모델 설정
 model_name = "intfloat/multilingual-e5-small"
@@ -16,10 +16,7 @@ tokenizer = AutoTokenizer.from_pretrained(model_name)
 text_model = AutoModel.from_pretrained(model_name)
 
 # Googletrans 번역기 설정
-translator = GoogleTranslator()
-# pip uninstall googletrans
-# pip install deep-translator 기존 라이브러리 openai와 충돌로
-# 제거 하고 deep-translator 설치합니다.
+translator = Translator()
 
 # Florence 모델 설정
 device = torch.device("cpu")
