@@ -22,4 +22,3 @@ async def generate_summary(text):
     )
     return response.choices[0].message['content'].strip()
 
-print(f"제대로 오는지 확인: {openai_api_key}")

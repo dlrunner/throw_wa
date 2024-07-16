@@ -15,12 +15,10 @@ async def keyword_extraction(text):
         model="gpt-3.5-turbo",  # ChatGPT 모델 사용
         messages=[
             {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": f"다음 텍스트에서 가장 중요하다고 생각하는 키워드 하나만 추출해주세요. 가능한 한 단어로 간결하게 작성해주세요: {text}"}
+            {"role": "user", "content": f"다음 텍스트를 다음 카테고리 중 하나로 분류해주세요: IT 지식, 음식, 여행, 교육, 건강, 금융, 동물, 정치, 지식, 예능, 스포츠, 기타. 분류 결과만 답변해주세요.: {text}"}
         ],
         max_tokens=10,
         temperature=0.7,
     )
     return response.choices[0].message['content'].strip()
 
-# 예시: .env 파일에서 불러온 API 키 출력 (디버깅용)
-print(f"제대로 오는지 확인: {openai_api_key}")
