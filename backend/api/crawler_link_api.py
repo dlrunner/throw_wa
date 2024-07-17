@@ -4,6 +4,9 @@ from bs4 import BeautifulSoup
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from models.embedding import embed_text  # 임베딩 함수 호출
+from models.summary_text import generate_summary
+from models.keyword_text import keyword_extraction
+from models.title_generate import generate_title # 제목 추출
 from database.database import Database
 from database.vector_db import VectorDatabase
 from models.summary_text import generate_summary
@@ -54,22 +57,13 @@ async def add_bookmark(bookmark: Bookmark):
     if not title or not content:
         raise HTTPException(status_code=500, detail="이 웹사이트는 크롤링을 할 수 없습니다.")
 
-    # 크롤링한 데이터를 DB에 저장
-    try:
-        id = db.insert_crawling(url, title, content)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"데이터베이스 오류: {str(e)}")
-
-    # 콘텐츠 임베딩 생성
+    id = db.insert_crawling(url, title, content)
     embedding = embed_text(content)
 
-    # 콘텐츠 요약 및 키워드 생성
-    try:
-        summary_text = await generate_summary(content)
-        keyword = await keyword_extraction(summary_text)
-        show_title = await generate_title(summary_text)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"텍스트 처리 오류: {str(e)}")
+    summary_text = await generate_summary(content)
+    keyword = await keyword_extraction(summary_text)
+    show_title = await generate_title(summary_text)
+
 
     payload = {
         "id": str(id),
