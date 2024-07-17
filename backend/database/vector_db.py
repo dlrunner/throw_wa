@@ -104,7 +104,7 @@ class VectorDatabase:
                     keyword_counter[keyword] += 1
                     if link:
                         keyword_links[keyword].append({
-                            "link" : link,
+                            "url" : link,
                             "title" : title,
                             "type" : type
                         })
