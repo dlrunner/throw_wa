@@ -31,6 +31,9 @@ const BottomBox = () => {
       const recentWeekData = await recentWeekResponse.json();
       const keywordRankingsData = await keywordRankingsResponse.json();
 
+      console.log('키워드 데이터 오는지 확인:', keywordRankingsData);
+      console.log('날짜별 데이터 오는지 확인:', recentWeekData);
+
       const aggregatedData = aggregateData(recentWeekData);
       setData(aggregatedData);
 
@@ -68,7 +71,7 @@ const BottomBox = () => {
       const date = curr.date.split('T')[0];
       acc[date] = acc[date] || { count: 0, urls: [] };
       acc[date].count += 1;
-      acc[date].urls.push({url:curr.url, title: curr.title, type: curr.type});
+      acc[date].urls.push({url: curr.link, title: curr.title, type: curr.type});
       return acc;
     }, {});
 
@@ -145,15 +148,20 @@ const BottomBox = () => {
       {keywordLinks.length > 0 && (
         <div className="keyword-links">
           <h3>관련 링크:</h3>
+          <div className='keyword-container'>
           <ul>
             {keywordLinks.map((link, index) => (
               <li key={index}>
                 <span style={{ fontSize: 'larger'}}>
                   [{link.type}]
                 </span>
-                <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title} style={{color : "#9bfe63"}}>{truncateLink(link.title)}</a></li>
+                <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title} style={{ color: "#9bfe63" }}>
+                  {truncateLink(link.title)}
+                </a>
+              </li>
             ))}
           </ul>
+          </div>
         </div>
       )}
       {data && (
@@ -168,7 +176,10 @@ const BottomBox = () => {
                       <span style={{ fontSize: 'larger'}}>
                         [{link.type}]
                       </span>
-                      <a href={link.url} target="_blank" rel="noopener noreferrer"title={link.title} style={{color : "#9bfe63"}} >{truncateLink(link.title)}</a></li>
+                      <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title} style={{ color: "#9bfe63" }}>
+                        {truncateLink(link.title)}
+                      </a>
+                    </li>
                   ))}
                 </ul>
               </div>
