@@ -6,7 +6,9 @@ from pydantic import BaseModel
 from models.embedding import embed_text  # 임베딩 함수 호출
 from database.database import Database
 from database.vector_db import VectorDatabase
-import numpy as np
+from models.summary_text import generate_summary
+from models.keyword_text import keyword_extraction
+from models.title_generate import generate_title  # 제목 추출
 import httpx
 
 router = APIRouter()
@@ -18,6 +20,7 @@ db_config = {
     'password': 'nlrunner',
     'database': 'nlrunner_db'
 }
+
 try:
     db = Database(**db_config)
     db.connect()
@@ -51,18 +54,32 @@ async def add_bookmark(bookmark: Bookmark):
     if not title or not content:
         raise HTTPException(status_code=500, detail="이 웹사이트는 크롤링을 할 수 없습니다.")
 
-    id = db.insert_crawling(url, title, content)
+    # 크롤링한 데이터를 DB에 저장
+    try:
+        id = db.insert_crawling(url, title, content)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"데이터베이스 오류: {str(e)}")
+
+    # 콘텐츠 임베딩 생성
     embedding = embed_text(content)
+
+    # 콘텐츠 요약 및 키워드 생성
+    try:
+        summary_text = await generate_summary(content)
+        keyword = await keyword_extraction(summary_text)
+        show_title = await generate_title(summary_text)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"텍스트 처리 오류: {str(e)}")
 
     payload = {
         "id": str(id),
-        "embedding" : embedding,
-        "link" : url,
-        "type" : bookmark.type,
-        "date" : bookmark.date,
+        "embedding": embedding,
+        "link": url,
+        "type": bookmark.type,
+        "date": bookmark.date,
         "summary": str(summary_text),
-        "keyword" : str(keyword),
-        "title" : str(show_title)
+        "keyword": str(keyword),
+        "title": str(show_title)
     }
 
     spring_url = "http://localhost:8080/api/embedding"
@@ -75,7 +92,6 @@ async def add_bookmark(bookmark: Bookmark):
             print(f"Error connecting to Spring Boot server: {str(e)}")
             raise HTTPException(status_code=500, detail="스프링 서버와 연결할 수 없습니다.")
 
- 
     return {
         "success": True,
         "id": id,
