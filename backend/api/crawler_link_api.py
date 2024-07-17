@@ -10,6 +10,7 @@ import numpy as np
 import httpx
 from models.summary_text import generate_summary  # 요약 함수
 from models.keyword_text import keyword_extraction # 키워드 추출
+from models.title_generate import generate_title # 제목 추출
 
 router = APIRouter()
 
@@ -55,9 +56,11 @@ async def add_bookmark(bookmark: Bookmark):
 
     summary_text = await generate_summary(content)
     keyword = await keyword_extraction(summary_text)
+    show_title = await generate_title(summary_text)
 
     id = db.insert_crawling(url, title, content)
     embedding = embed_text(content)
+    
 
 
     payload = {
@@ -67,7 +70,8 @@ async def add_bookmark(bookmark: Bookmark):
         "type" : bookmark.type,
         "date" : bookmark.date,
         "summary": str(summary_text),
-        "keyword" : str(keyword)
+        "keyword" : str(keyword),
+        "title" : str(show_title)
     }
 
     spring_url = "http://localhost:8080/api/embedding"
@@ -85,7 +89,7 @@ async def add_bookmark(bookmark: Bookmark):
         "success": True,
         "id": id,
         "url": url,
-        "title": title,
+        "title": show_title,
         "summary" : summary_text,
         "keyword" : keyword,
         "content_length": len(content),

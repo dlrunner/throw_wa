@@ -98,11 +98,16 @@ class VectorDatabase:
             for match in response['matches']:
                 keyword = match['metadata'].get('keyword')
                 link = match['metadata'].get('link')
+                title = match['metadata'].get('title')
+                type = match['metadata'].get('type')
                 if keyword:
                     keyword_counter[keyword] += 1
                     if link:
-                        keyword_links[keyword].append(link)
-
+                        keyword_links[keyword].append({
+                            "link" : link,
+                            "title" : title,
+                            "type" : type
+                        })
             sorted_keywords = keyword_counter.most_common()
         
             # 반환할 데이터 구조를 키워드와 링크로 변경

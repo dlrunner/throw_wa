@@ -6,6 +6,7 @@ from database.vector_db import VectorDatabase
 import httpx
 from models.summary_text import generate_summary
 from models.keyword_text import keyword_extraction
+from models.title_generate import generate_title # 제목 추출
 
 router = APIRouter()
 
@@ -42,12 +43,14 @@ async def get_image_embedding_endpoint(request: ImageEmbRequest):
 
         summary_text = await generate_summary(transcaption)
         keyword = await keyword_extraction(summary_text)
+        show_title = await generate_title(summary_text)
 
         # 결과 준비
         results = {
             "success": True,
             "image_url": request.url,
             "original_caption": caption,
+            "title": show_title,
             "요약": summary_text,
             "keyword": keyword,
             "translated_caption": transcaption,
@@ -61,7 +64,8 @@ async def get_image_embedding_endpoint(request: ImageEmbRequest):
             "type": request.type,
             "date": request.date,
             "summary": str(summary_text),
-            "keyword" : str(keyword)
+            "keyword" : str(keyword),
+            "title" : str(show_title)
         }
 
         spring_url = "http://localhost:8080/api/embedding"

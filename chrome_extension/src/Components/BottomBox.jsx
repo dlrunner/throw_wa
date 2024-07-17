@@ -68,7 +68,7 @@ const BottomBox = () => {
       const date = curr.date.split('T')[0];
       acc[date] = acc[date] || { count: 0, urls: [] };
       acc[date].count += 1;
-      acc[date].urls.push(curr.url);
+      acc[date].urls.push({url:curr.url, title: curr.title, type: curr.type});
       return acc;
     }, {});
 
@@ -123,10 +123,10 @@ const BottomBox = () => {
     };
   };
 
-  const truncateLink = (url) => {
+  const truncateLink = (text) => {
     const maxLength = 50;
-    if (url.length <= maxLength) return url;
-    return `${url.substring(0, maxLength)}...`;
+    if (text.length <= maxLength) return text;
+    return `${text.substring(0, maxLength)}...`;
   };
 
   return (
@@ -138,7 +138,7 @@ const BottomBox = () => {
       {error && <p>Error: {error}</p>}
       {rankings.length > 0 && (
         <div className="rankings">
-          <h3>회원님의 가장 많이본 키워드는 <strong style={{ color: '#7289da' }}>{bestKeyword.keyword}</strong>입니다</h3>
+          <h3>회원님의 가장 많이 저장한 카테고리는 <strong style={{ color: '#7289da' }}>{bestKeyword.keyword}</strong>입니다</h3>
           <Pie data={getPieChartData()} options={{ onClick: (e, elements) => handlePieChartClick(elements) }} />
         </div>
       )}
@@ -147,7 +147,11 @@ const BottomBox = () => {
           <h3>관련 링크:</h3>
           <ul>
             {keywordLinks.map((link, index) => (
-              <li key={index}><a href={link} target="_blank" rel="noopener noreferrer">{truncateLink(link)}</a></li>
+              <li key={index}>
+                <span style={{ fontSize: 'larger'}}>
+                  [{link.type}]
+                </span>
+                <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title} style={{color : "#9bfe63"}}>{truncateLink(link.title)}</a></li>
             ))}
           </ul>
         </div>
@@ -159,8 +163,12 @@ const BottomBox = () => {
             visibleLinks[date] && (
               <div key={date} className="bookmark-list">
                 <ul>
-                  {data.find(item => item.date === date).urls.map((url, index) => (
-                    <li key={index}><a href={url} target="_blank" rel="noopener noreferrer">{truncateLink(url)}</a></li>
+                  {data.find(item => item.date === date).urls.map((link, index) => (
+                    <li key={index}>
+                      <span style={{ fontSize: 'larger'}}>
+                        [{link.type}]
+                      </span>
+                      <a href={link.url} target="_blank" rel="noopener noreferrer"title={link.title} style={{color : "#9bfe63"}} >{truncateLink(link.title)}</a></li>
                   ))}
                 </ul>
               </div>

@@ -13,6 +13,7 @@ import httpx
 from models.embedding import embed_text  # 임베딩 함수 호출
 from models.summary_text import generate_summary
 from models.keyword_text import keyword_extraction
+from models.title_generate import generate_title # 제목 추출
 
 router = APIRouter()
 
@@ -82,6 +83,7 @@ async def transcribe(request: TranscribeRequest):
 
         summary_text = await generate_summary(result)
         keyword = await keyword_extraction(summary_text)
+        show_title = await generate_title(summary_text)
 
         payload = {
         "id": str(id),
@@ -90,7 +92,8 @@ async def transcribe(request: TranscribeRequest):
         "type" : request.type,
         "date" : request.date,
         "summary": str(summary_text),
-        "keyword" : str(keyword)
+        "keyword" : str(keyword),
+        "title" : str(show_title)
     }
 
         spring_url = "http://localhost:8080/api/embedding"
@@ -107,6 +110,7 @@ async def transcribe(request: TranscribeRequest):
             "success": True,
             "content": result,
             "요약" : summary_text,
+            "title": show_title,
             "keyword" : keyword,
             "video_id": video_id,
             "embedding": embedding,

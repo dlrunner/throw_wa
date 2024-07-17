@@ -19,6 +19,8 @@ vector_db = VectorDatabase(
 class Bookmark(BaseModel):
     url: str
     date: str
+    type : str
+    title : str
 
 @router.get("/record", response_model=List[Bookmark])
 async def get_record(date: str = Query(..., description="The date to filter bookmarks by")):
@@ -48,7 +50,7 @@ async def recent_week():
             response = vector_db.search_by_metadata(metadata_filter)
             data = response["matches"]
             for item in data:
-                bookmarks.append(Bookmark(url=item["metadata"]["link"], date=item["metadata"]["date"]))
+                bookmarks.append(Bookmark(url=item["metadata"]["link"], date=item["metadata"]["date"], type=item['metadata']["type"], title=item['metadata']['title']))
                 
         return bookmarks
     except Exception as e:
