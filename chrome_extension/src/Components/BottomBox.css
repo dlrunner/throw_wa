@@ -78,3 +78,21 @@
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+.keyword-links ul {
+  padding-left: 20px;
+  text-align: left;
+}
+
+.keyword-links li {
+  list-style-type: disc;
+  margin-left: 20px;
+}
+.bookmark-list ul {
+  padding-left: 20px;
+  text-align: left;
+}
+
+.bookmark-list li {
+  list-style-type: disc;
+  margin-left: 20px;
+}
