@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './BottomBox.css';
 import { Line, Pie } from 'react-chartjs-2';
-import 'chart.js/auto'; // yarn add chart.js  // yarn add react-chartjs-2 설치해야됨
+import 'chart.js/auto'; // yarn add chart.js  //  yarn add react-chartjs-2 설치해야됨
 
 const BottomBox = () => {
   const [data, setData] = useState(null);
@@ -173,21 +173,6 @@ const BottomBox = () => {
                 </ul>
               </div>
             )
-          ))}
-        </div>
-      )}
-      {Object.keys(categorizedData).length > 0 && (
-        <div className="categories">
-          <h3>항목별 결과</h3>
-          {Object.keys(categorizedData).map(type => (
-            <div key={type}>
-              <h4>{type}</h4>
-              <ul>
-                {categorizedData[type].map((item, index) => (
-                  <li key={index}><a href={item.link} target="_blank" rel="noopener noreferrer">{truncateLink(item.link)}</a></li>
-                ))}
-              </ul>
-            </div>
           ))}
         </div>
       )}
