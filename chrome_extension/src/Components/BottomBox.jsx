@@ -1,32 +1,65 @@
 import React, { useState, useEffect } from 'react';
 import './BottomBox.css';
-import { Line } from 'react-chartjs-2';
+import { Line, Pie } from 'react-chartjs-2';
 import 'chart.js/auto'; // yarn add chart.js  //  yarn add react-chartjs-2 설치해야됨
 
 const BottomBox = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [rankings, setRankings] = useState([]);
+  const [bestKeyword, setBestKeyword] = useState(null);
+  const [visibleLinks, setVisibleLinks] = useState({});
+  const [keywordLinks, setKeywordLinks] = useState([]);
 
-  const handleClick = async (buttonNumber) => {
-    if (buttonNumber === 1) {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch('http://localhost:8000/api/recent-week');
-        if (!response.ok) {
-          throw new Error('Failed to fetch data');
-        }
-        const result = await response.json();
-        const aggregatedData = aggregateData(result);
-        setData(aggregatedData);
-      } catch (error) {
-        setError(error.message);
-      } finally {
-        setLoading(false);
+  const handleClick = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [recentWeekResponse, keywordRankingsResponse] = await Promise.all([
+        fetch('http://localhost:8000/api/recent-week'),
+        fetch('http://localhost:8000/api/keyword-rankings')
+      ]);
+
+      if (!recentWeekResponse.ok) {
+        throw new Error('Failed to fetch recent week data');
       }
-    } else {
-      alert(`Button ${buttonNumber} clicked!`);
+      if (!keywordRankingsResponse.ok) {
+        throw new Error('Failed to fetch keyword rankings');
+      }
+
+      const recentWeekData = await recentWeekResponse.json();
+      const keywordRankingsData = await keywordRankingsResponse.json();
+
+      const aggregatedData = aggregateData(recentWeekData);
+      setData(aggregatedData);
+
+      const bestRank = keywordRankingsData.rankings[0];
+      setBestKeyword(bestRank);
+      setRankings(keywordRankingsData.rankings);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePieChartClick = (elements) => {
+    if (elements.length > 0) {
+      const index = elements[0].index;
+      const keyword = rankings[index].keyword;
+      setKeywordLinks(rankings[index].links);
+    }
+  };
+
+  const handleLineChartClick = (elements) => {
+    if (elements.length > 0) {
+      const index = elements[0].index;
+      const date = data[index].date;
+      setVisibleLinks(prevVisibleLinks => ({
+        ...prevVisibleLinks,
+        [date]: !prevVisibleLinks[date]
+      }));
     }
   };
 
@@ -35,7 +68,7 @@ const BottomBox = () => {
       const date = curr.date.split('T')[0];
       acc[date] = acc[date] || { count: 0, urls: [] };
       acc[date].count += 1;
-      acc[date].urls.push(curr.url);
+      acc[date].urls.push({url:curr.url, title: curr.title, type: curr.type});
       return acc;
     }, {});
 
@@ -50,7 +83,7 @@ const BottomBox = () => {
       labels,
       datasets: [
         {
-          label: '일주일간 북마크 기록',
+          label: '일주일 throw-wa 기록',
           data: values,
           fill: false,
           backgroundColor: 'rgba(75,192,192,0.6)',
@@ -59,36 +92,88 @@ const BottomBox = () => {
       ],
     };
   };
-  const truncateLink = (url) => {
+
+  const getPieChartData = () => {
+    if (rankings.length === 0) return null;
+    const labels = rankings.map(rank => rank.keyword);
+    const values = rankings.map(rank => rank.count);
+    return {
+      labels,
+      datasets: [
+        {
+          data: values,
+          backgroundColor: [
+            '#FF6384',
+            '#36A2EB',
+            '#FFCE56',
+            '#4BC0C0',
+            '#9966FF',
+            '#FF9F40'
+          ],
+          hoverBackgroundColor: [
+            '#FF6384',
+            '#36A2EB',
+            '#FFCE56',
+            '#4BC0C0',
+            '#9966FF',
+            '#FF9F40'
+          ]
+        }
+      ]
+    };
+  };
+
+  const truncateLink = (text) => {
     const maxLength = 50;
-    if (url.length <= maxLength) return url;
-    return `${url.substring(0, maxLength)}...`;
+    if (text.length <= maxLength) return text;
+    return `${text.substring(0, maxLength)}...`;
   };
 
   return (
     <div className="bottom-box">
       <div className="button-container">
-        <button onClick={() => handleClick(1)} className="bottom-button">history</button>
-        <button onClick={() => handleClick(2)} className="bottom-button">Button 2</button>
-        <button onClick={() => handleClick(3)} className="bottom-button">Button 3</button>
+        <button onClick={handleClick} className="bottom-button">Throw Chart</button>
       </div>
       {loading && <div className="loading-bar"></div>}
       {error && <p>Error: {error}</p>}
+      {rankings.length > 0 && (
+        <div className="rankings">
+          <h3>회원님의 가장 많이 저장한 카테고리는 <strong style={{ color: '#7289da' }}>{bestKeyword.keyword}</strong>입니다</h3>
+          <Pie data={getPieChartData()} options={{ onClick: (e, elements) => handlePieChartClick(elements) }} />
+        </div>
+      )}
+      {keywordLinks.length > 0 && (
+        <div className="keyword-links">
+          <h3>관련 링크:</h3>
+          <ul>
+            {keywordLinks.map((link, index) => (
+              <li key={index}>
+                <span style={{ fontSize: 'larger'}}>
+                  [{link.type}]
+                </span>
+                <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title} style={{color : "#9bfe63"}}>{truncateLink(link.title)}</a></li>
+            ))}
+          </ul>
+        </div>
+      )}
       {data && (
         <div className="chart-container">
-          <Line data={getChartData()} />
-          <div className="bookmark-list">
-            {data.map(item => (
-              <div key={item.date}>
-                <h3>{item.date}</h3>
+          <Line data={getChartData()} options={{ onClick: (e, elements) => handleLineChartClick(elements) }} />
+          {Object.keys(visibleLinks).map(date => (
+            visibleLinks[date] && (
+              <div key={date} className="bookmark-list">
                 <ul>
-                  {item.urls.map((url, index) => (
-                    <li key={index}><a href={url} target="_blank" rel="noopener noreferrer">{truncateLink(url)}</a></li>
+                  {data.find(item => item.date === date).urls.map((link, index) => (
+                    <li key={index}>
+                      <span style={{ fontSize: 'larger'}}>
+                        [{link.type}]
+                      </span>
+                      <a href={link.url} target="_blank" rel="noopener noreferrer"title={link.title} style={{color : "#9bfe63"}} >{truncateLink(link.title)}</a></li>
                   ))}
                 </ul>
               </div>
-            ))}
-          </div>
+            )
+          ))}
         </div>
       )}
     </div>

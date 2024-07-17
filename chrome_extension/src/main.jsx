@@ -7,10 +7,10 @@ import AppContextProvider from './contexts/AppContextProvider.jsx';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <HashRouter>
       <AppContextProvider>
         <App />
       </AppContextProvider>
-    </BrowserRouter>
+    </HashRouter>
   </React.StrictMode>
 );

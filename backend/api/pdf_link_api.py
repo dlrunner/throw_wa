@@ -9,6 +9,9 @@ from database.vector_db import VectorDatabase
 from models.embedding import embed_text  # Import the embedding function
 import numpy as np
 import httpx
+from models.summary_text import generate_summary
+from models.keyword_text import keyword_extraction
+from models.title_generate import generate_title # 제목 추출
 
 router = APIRouter()
 
@@ -62,13 +65,19 @@ async def extract_local_pdf(pdf_url: PDFUrl):
         extracted_text = extract_text_from_local_pdf(pdf_url.url)
         id = db.insert_pdf(pdf_url.url, extracted_text)
         embedding = embed_text(extracted_text)
+        summary_text = await generate_summary(extracted_text)
+        keyword = await keyword_extraction(summary_text)
+        show_title = await generate_title(summary_text)
 
         payload = {
         "id": str(id),
         "embedding" : embedding,
         "link" : pdf_url.url,
         "type" : pdf_url.type,
-        "date" : pdf_url.date
+        "date" : pdf_url.date,
+        "summary": str(summary_text),
+        "keyword" : str(keyword),
+        "title" : str(show_title)
     }
 
         spring_url = "http://localhost:8080/api/embedding"
@@ -82,7 +91,14 @@ async def extract_local_pdf(pdf_url: PDFUrl):
                 raise HTTPException(status_code=500, detail="스프링 서버와 연결할 수 없습니다.")
             
 
-        return {"success": True, "text": extracted_text, "embedding": embedding}
+        return {
+            "success": True,
+            "text": extracted_text,
+            "요약": summary_text,
+            "title": show_title,
+            "keyword" : keyword,
+            "embedding": embedding,
+            }
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

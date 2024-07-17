@@ -50,7 +50,11 @@ async def search(request: QueryRequest):
                 {
                     "id": match['id'], 
                     "score": match['score'],
-                    "link": match['metadata']['link'] if 'metadata' in match else {}
+                    "link": match['metadata']['link'] if 'metadata' in match else {},
+                    "summary": match['metadata']['summary'],
+                    "keyword": match['metadata']['keyword'],
+                    "type" : match['metadata'] ['type'],
+                    "title" : match['metadata'] ['title'] if 'metadata' in match else {}
                 }
                 for match in result['matches']
             ]

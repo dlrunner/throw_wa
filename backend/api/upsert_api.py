@@ -19,6 +19,9 @@ class VectorUpsertRequest(BaseModel):
     link: str
     type: str # 유튜브인지 웹인지 pdf인지 파악하기 위한 용도
     date: str # 링크 업로드 날짜 
+    summary : str # 요약 메타데이터 선언
+    keyword : str # 키워드 메타데이터
+    title : str # 제목 메타데이터
 
 @router.post("/vector_upsert")
 async def vector_upsert(request: VectorUpsertRequest):
@@ -31,7 +34,10 @@ async def vector_upsert(request: VectorUpsertRequest):
             metadata={
                 "link": request.link,
                 "type": request.type,
-                "date": request.date
+                "date": request.date,
+                "summary" : request.summary,
+                "keyword" : request.keyword,
+                "title" : request.title
                 }
         )
 

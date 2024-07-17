@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
 import './ChatBox.css';
 import { FaSearch } from 'react-icons/fa'; // Font Awesome Search Icon yarn add react-icons
 
 const ChatBox = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-  const [topK, setTopK] = useState(1);
+  const [topK, setTopK] = useState(5);
 
   const handleSend = () => {
     if (input.trim() === '') return;
@@ -21,11 +20,15 @@ const ChatBox = () => {
     })
     .then(response => response.json())
     .then(data => {
+      console.log('응답 데이터:', data); // 응답 데이터 확인을 위한 콘솔 출력
       const botMessages = data.matches.map(match => {
         return {
           text: '링크',
           sender: 'bot',
-          link: match.link
+          type: match.type,
+          link: match.link, 
+          summary : match.summary,
+          title : match.title
         };
       });
       setMessages(prevMessages => [...prevMessages, ...botMessages]);
@@ -41,10 +44,10 @@ const ChatBox = () => {
     }
   };
 
-  const truncateLink = (link) => {
+  const truncateLink = (text) => {
     const maxLength = 30;
-    if (link.length <= maxLength) return link;
-    return `${link.substring(0, maxLength)}...`;
+    if (text.length <= maxLength) return text;
+    return `${text.substring(0, maxLength)}...`;
   };
 
   return (
@@ -67,7 +70,7 @@ const ChatBox = () => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="뭐였더라..."
+            placeholder="찾고싶은 링크의 내용을 적어주세요!"
           />
           <button onClick={handleSend}>
             <FaSearch /> {/* 돋보기 아이콘 추가 */}
@@ -79,9 +82,13 @@ const ChatBox = () => {
           <div key={index} className={`chat-message ${msg.sender}`}>
             {msg.link ? (
               <>
-              {msg.text}:<a href={msg.link} target='_blank' rel='noopener noreferrer' title={msg.link}>
-                {truncateLink(msg.link)}
+              <span style={{ fontSize: 'larger'}}>
+                  [{msg.type}]
+                </span>
+              <a href={msg.link} target='_blank' rel='noopener noreferrer' title={msg.link} style={{color : "#9bfe63"}}>
+                {truncateLink(msg.title)}
               </a>
+              <div className='message-summary'>{msg.summary}</div>
               </>
             ) : (
               msg.text
