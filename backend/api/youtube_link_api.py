@@ -12,8 +12,11 @@ from database.vector_db import VectorDatabase
 import httpx
 from models.embedding import embed_text  # 임베딩 함수 호출
 from models.summary_text import generate_summary
+<<<<<<< HEAD
+=======
 from models.keyword_text import keyword_extraction
 from models.title_generate import generate_title # 제목 추출
+>>>>>>> a98d8b9c717020fdbd029c1731afe1ac82aaab2f
 
 router = APIRouter()
 

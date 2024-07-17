@@ -1,0 +1,25 @@
+.header {
+  background-color: #ffffff;
+  color: #333;
+  padding: 1rem;
+}
+
+.header h1 {
+  margin: 0;
+}
+
+.header nav ul {
+  list-style-type: none;
+  padding: 0;
+  text-align: right;
+}
+
+.header nav ul li {
+  display: inline;
+  margin-right: 1rem;
+}
+
+.header nav ul li a {
+  color: #333;
+  text-decoration: none;
+}

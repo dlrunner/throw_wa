@@ -8,9 +8,6 @@ from database.database import Database
 from database.vector_db import VectorDatabase
 import numpy as np
 import httpx
-from models.summary_text import generate_summary  # 요약 함수
-from models.keyword_text import keyword_extraction # 키워드 추출
-from models.title_generate import generate_title # 제목 추출
 
 router = APIRouter()
 
@@ -54,14 +51,8 @@ async def add_bookmark(bookmark: Bookmark):
     if not title or not content:
         raise HTTPException(status_code=500, detail="이 웹사이트는 크롤링을 할 수 없습니다.")
 
-    summary_text = await generate_summary(content)
-    keyword = await keyword_extraction(summary_text)
-    show_title = await generate_title(summary_text)
-
     id = db.insert_crawling(url, title, content)
     embedding = embed_text(content)
-    
-
 
     payload = {
         "id": str(id),
@@ -89,9 +80,7 @@ async def add_bookmark(bookmark: Bookmark):
         "success": True,
         "id": id,
         "url": url,
-        "title": show_title,
-        "summary" : summary_text,
-        "keyword" : keyword,
+        "title": title,
         "content_length": len(content),
         "content": content,
         "embedding": embedding,
