@@ -8,6 +8,7 @@ from database.database import Database
 from database.vector_db import VectorDatabase
 import numpy as np
 import httpx
+from models.summary_text import generate_summary # 요약 함수
 
 router = APIRouter()
 
@@ -51,8 +52,11 @@ async def add_bookmark(bookmark: Bookmark):
     if not title or not content:
         raise HTTPException(status_code=500, detail="이 웹사이트는 크롤링을 할 수 없습니다.")
 
+    summary_text = await generate_summary(content)
+
     id = db.insert_crawling(url, title, content)
     embedding = embed_text(content)
+    summary_embedding = embed_text(summary_text)
 
     payload = {
         "id": str(id),
@@ -78,6 +82,7 @@ async def add_bookmark(bookmark: Bookmark):
         "id": id,
         "url": url,
         "title": title,
+        "summary" : summary_text,
         "content_length": len(content),
         "content": content,
         "embedding": embedding,

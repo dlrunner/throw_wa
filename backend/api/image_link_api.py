@@ -4,6 +4,7 @@ from models.embedding import imagecaption, embed_text, translate_text  # 번역 
 from database.database import Database
 from database.vector_db import VectorDatabase
 import httpx
+from models.summary_text import generate_summary
 
 router = APIRouter()
 
@@ -38,11 +39,14 @@ async def get_image_embedding_endpoint(request: ImageEmbRequest):
         # 데이터베이스에 결과 저장 (번역된 한국어 캡셔닝만 저장)
         image_id = db.insert_image(request.url, transcaption)
 
+        summary_text = await generate_summary(transcaption)
+
         # 결과 준비
         results = {
             "success": True,
             "image_url": request.url,
             "original_caption": caption,
+            "요약": summary_text,
             "translated_caption": transcaption,
             "텍스트 임베딩값": embedding
         }

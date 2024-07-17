@@ -11,6 +11,7 @@ from database.database import Database
 from database.vector_db import VectorDatabase
 import httpx
 from models.embedding import embed_text  # 임베딩 함수 호출
+from models.summary_text import generate_summary
 
 router = APIRouter()
 

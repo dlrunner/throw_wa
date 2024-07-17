@@ -66,9 +66,7 @@
   gap: 10px;
   align-items: center;
   padding: 10px; /* 추가: 입력창 내부 여백 */
-  border-top: 2px solid #fff; /* 추가: 흰색 테두리선 */
   border-radius: 0 0 10px 10px; /* 추가: 입력창 아래쪽 테두리 둥글게 */
-  background-color: #2c2f33; /* 추가: 배경색 통일 */
 }
 
 .chat-input {
