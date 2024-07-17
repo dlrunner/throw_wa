@@ -19,6 +19,6 @@ async def get_keyword_rankings():
         if not keyword_rankings:
             return {"rankings": []}
         
-        return {"rankings": [{"keyword": keyword, "count": count} for keyword, count in keyword_rankings]}
+        return {"rankings": keyword_rankings}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"키워드 랭킹 호출 실패: {str(e)}")

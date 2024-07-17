@@ -21,6 +21,7 @@ class VectorUpsertRequest(BaseModel):
     date: str # 링크 업로드 날짜 
     summary : str # 요약 메타데이터 선언
     keyword : str # 키워드 메타데이터
+    title : str # 제목 메타데이터
 
 @router.post("/vector_upsert")
 async def vector_upsert(request: VectorUpsertRequest):
@@ -35,7 +36,8 @@ async def vector_upsert(request: VectorUpsertRequest):
                 "type": request.type,
                 "date": request.date,
                 "summary" : request.summary,
-                "keyword" : request.keyword
+                "keyword" : request.keyword,
+                "title" : request.title
                 }
         )
 

@@ -1,7 +1,7 @@
 from pinecone import Pinecone, ServerlessSpec
 from pinecone.exceptions import PineconeException
 from datetime import datetime, timedelta
-from collections import Counter
+from collections import Counter, defaultdict
 
 class VectorDatabase:
     def __init__(self, api_key: str, environment: str, index_name: str, dimension: int):
@@ -91,39 +91,31 @@ class VectorDatabase:
             response = self.query_by_metadata({})
             if not response or not response['matches']:
                 return None
-            
+        
             keyword_counter = Counter()
+            keyword_links = defaultdict(list)
+        
             for match in response['matches']:
                 keyword = match['metadata'].get('keyword')
+                link = match['metadata'].get('link')
+                title = match['metadata'].get('title')
+                type = match['metadata'].get('type')
                 if keyword:
                     keyword_counter[keyword] += 1
-
+                    if link:
+                        keyword_links[keyword].append({
+                            "link" : link,
+                            "title" : title,
+                            "type" : type
+                        })
             sorted_keywords = keyword_counter.most_common()
-            return sorted_keywords
-        except Exception as e :
-            raise ValueError(f"키워드 별 랭킹 실패: {str(e)}")
         
-    def get_top_n_by_type(self, n: int = 5):
-        try:
-            self.create_index_if_not_exists()
-            zero_vector = [0.0] * self.dimension
-            response = self.index.query(
-                vector=zero_vector,
-                top_k=1000,  # 임의의 큰 값으로 설정
-                include_metadata=True,
-                filter={}
-            )
-            if not response or not response['matches']:
-                return None
-            
-            type_dict = {}
-            for match in response['matches']:
-                type_ = match['metadata'].get('type')
-                if type_ not in type_dict:
-                    type_dict[type_] = []
-                if len(type_dict[type_]) < n:
-                    type_dict[type_].append(match['metadata'])
-            
-            return type_dict
-        except PineconeException as e:
-            raise ValueError(f"Failed to get top N by type: {str(e)}")
+            # 반환할 데이터 구조를 키워드와 링크로 변경
+            keyword_rankings = [
+                {"keyword": keyword, "count": count, "links": keyword_links[keyword]}
+                for keyword, count in sorted_keywords
+            ]
+        
+            return keyword_rankings
+        except Exception as e:
+            raise ValueError(f"키워드 별 랭킹 실패: {str(e)}")
