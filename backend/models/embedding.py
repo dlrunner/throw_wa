@@ -75,8 +75,8 @@ def imagecaption(image_url: str):
 
 # 텍스트 임베딩 함수
 def embed_text(text: str) -> list:
-    # 텍스트를 최대 길이 77로 분할
-    max_length = 77
+    # 텍스트를 최대 길이 77, 510으로 분할
+    max_length = 510
     text_chunks = [text[i:i+max_length] for i in range(0, len(text), max_length)]
     
     embeddings = []

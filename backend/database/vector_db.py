@@ -86,7 +86,7 @@ class VectorDatabase:
         except PineconeException as e:
             raise ValueError(f"Failed to query vector: {str(e)}")
         
-    def get_keword_rankings(self):
+    def get_keyword_rankings(self):
         try:
             response = self.query_by_metadata({})
             if not response or not response['matches']:
@@ -101,4 +101,29 @@ class VectorDatabase:
             sorted_keywords = keyword_counter.most_common()
             return sorted_keywords
         except Exception as e :
-            raise ValueError(f"키워드 별 랭킬 실패: {str(e)}")
+            raise ValueError(f"키워드 별 랭킹 실패: {str(e)}")
+        
+    def get_top_n_by_type(self, n: int = 5):
+        try:
+            self.create_index_if_not_exists()
+            zero_vector = [0.0] * self.dimension
+            response = self.index.query(
+                vector=zero_vector,
+                top_k=1000,  # 임의의 큰 값으로 설정
+                include_metadata=True,
+                filter={}
+            )
+            if not response or not response['matches']:
+                return None
+            
+            type_dict = {}
+            for match in response['matches']:
+                type_ = match['metadata'].get('type')
+                if type_ not in type_dict:
+                    type_dict[type_] = []
+                if len(type_dict[type_]) < n:
+                    type_dict[type_].append(match['metadata'])
+            
+            return type_dict
+        except PineconeException as e:
+            raise ValueError(f"Failed to get top N by type: {str(e)}")

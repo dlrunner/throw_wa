@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import './BottomBox.css';
 import { Line, Pie } from 'react-chartjs-2';
-import 'chart.js/auto'; // yarn add chart.js  //  yarn add react-chartjs-2 설치해야됨
+import 'chart.js/auto'; // yarn add chart.js  // yarn add react-chartjs-2 설치해야됨
 
 const BottomBox = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [rankings, setRankings] = useState([]);
+  const [categorizedData, setCategorizedData] = useState({});
 
   const handleClick = async (buttonNumber) => {
     if (buttonNumber === 1) {
       setLoading(true);
       setError(null);
       setRankings([]);
+      setCategorizedData({});
       try {
         const response = await fetch('http://localhost:8000/api/recent-week');
         if (!response.ok) {
@@ -31,6 +33,7 @@ const BottomBox = () => {
       setLoading(true);
       setError(null);
       setData(null);
+      setCategorizedData({});
       try {
         const response = await fetch('http://localhost:8000/api/keyword-rankings');
         if (!response.ok) {
@@ -38,6 +41,23 @@ const BottomBox = () => {
         }
         const result = await response.json();
         setRankings(result.rankings);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    } else if (buttonNumber === 3) {
+      setLoading(true);
+      setError(null);
+      setData(null);
+      setRankings([]);
+      try {
+        const response = await fetch('http://localhost:8000/api/category-data');
+        if (!response.ok) {
+          throw new Error('Failed to fetch category data');
+        }
+        const result = await response.json();
+        setCategorizedData(result);
       } catch (error) {
         setError(error.message);
       } finally {
@@ -118,8 +138,8 @@ const BottomBox = () => {
     <div className="bottom-box">
       <div className="button-container">
         <button onClick={() => handleClick(1)} className="bottom-button">history</button>
-        <button onClick={() => handleClick(2)} className="bottom-button">Button 2</button>
-        <button onClick={() => handleClick(3)} className="bottom-button">Button 3</button>
+        <button onClick={() => handleClick(2)} className="bottom-button">추천</button>
+        <button onClick={() => handleClick(3)} className="bottom-button">카테고리</button>
       </div>
       {loading && <div className="loading-bar"></div>}
       {error && <p>Error: {error}</p>}
@@ -144,6 +164,21 @@ const BottomBox = () => {
         <div className="rankings">
           <h3>키워드 랭킹</h3>
           <Pie data={getPieChartData()} />
+        </div>
+      )}
+      {Object.keys(categorizedData).length > 0 && (
+        <div className="categories">
+          <h3>항목별 결과</h3>
+          {Object.keys(categorizedData).map(type => (
+            <div key={type}>
+              <h4>{type}</h4>
+              <ul>
+                {categorizedData[type].map((item, index) => (
+                  <li key={index}><a href={item.link} target="_blank" rel="noopener noreferrer">{truncateLink(item.link)}</a></li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       )}
     </div>
