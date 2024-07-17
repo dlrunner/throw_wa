@@ -12,10 +12,7 @@ function App() {
     <>
       <Routes>
         <Route path='/' element={<Onboarding />}></Route>
-        <Route path='/signUp' element={<SignUp />}></Route>
-        <Route path='/login' element={<Login />}></Route>
         <Route path='/home' element={<Home />}></Route>
-        <Route path='/oauth2/callback/kakao' element={<KakaoLoginHandler />}></Route>
       </Routes>
     </>
   );

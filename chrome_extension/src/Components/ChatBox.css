@@ -1,7 +1,7 @@
 .chat-box {
   display: flex;
   flex-direction: column;
-  width: 350px;
+  width: 370px;
   height: 400px;
   margin: 0 auto;
   background-color: #2c2f33; /* 디스코드 어두운 배경 */
