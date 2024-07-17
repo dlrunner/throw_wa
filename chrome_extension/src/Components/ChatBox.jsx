@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import './ChatBox.css';
 import { FaSearch } from 'react-icons/fa'; // Font Awesome Search Icon yarn add react-icons
 
