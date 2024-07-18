@@ -64,7 +64,7 @@ class VectorDatabase:
             zero_vector = [0.0] * self.dimension
             response = self.index.query(
                 vector=zero_vector,
-                top_k=10,
+                top_k=1000,
                 include_metadata=True,
                 filter=metadata
             )
@@ -78,7 +78,7 @@ class VectorDatabase:
             zero_vector = [0.0] * self.dimension
             response = self.index.query(
                 vector=zero_vector,
-                top_k=10,
+                top_k=1000,
                 include_metadata=True,
                 filter=metadata_filter
             )

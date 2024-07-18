@@ -10,7 +10,7 @@ const BottomBox = () => {
   const [rankings, setRankings] = useState([]);
   const [bestKeyword, setBestKeyword] = useState(null);
   const [visibleLinks, setVisibleLinks] = useState({});
-  const [keywordLinks, setKeywordLinks] = useState([]);
+  const [keywordLinks, setKeywordLinks] = useState({});
 
   const handleClick = async () => {
     setLoading(true);
@@ -52,7 +52,9 @@ const BottomBox = () => {
       const index = elements[0].index;
       const keyword = rankings[index].keyword;
       console.log('키워드 클릭됨:', keyword, rankings[index].links);
-      setKeywordLinks(rankings[index].links);
+
+      setKeywordLinks({ [keyword]: rankings[index].links });
+      setVisibleLinks({});
     }
   };
 
@@ -61,10 +63,9 @@ const BottomBox = () => {
       const index = elements[0].index;
       const date = data[index].date;
       console.log('날짜 클릭됨:', date, data[index].urls);
-      setVisibleLinks(prevVisibleLinks => ({
-        ...prevVisibleLinks,
-        [date]: !prevVisibleLinks[date]
-      }));
+
+      setVisibleLinks({ [date]: true });
+      setKeywordLinks({});
     }
   };
 
@@ -147,11 +148,11 @@ const BottomBox = () => {
           <Pie data={getPieChartData()} options={{ onClick: (e, elements) => handlePieChartClick(elements) }} />
         </div>
       )}
-      {keywordLinks.length > 0 && (
-        <div className="keyword-links">
-          <h3>관련 링크:</h3>
+      {Object.keys(keywordLinks).map(keyword => (
+        <div key={keyword} className="keyword-links">
+          <h3>{keyword} 링크</h3>
           <ul>
-            {keywordLinks.map((link, index) => (
+            {keywordLinks[keyword].map((link, index) => (
               <li key={index}>
                 <span style={{ fontSize: 'larger'}}>
                   [{link.type}]
@@ -163,7 +164,7 @@ const BottomBox = () => {
             ))}
           </ul>
         </div>
-      )}
+      ))}
       {data && (
         <div className="chart-container">
           <Line data={getChartData()} options={{ onClick: (e, elements) => handleLineChartClick(elements) }} />

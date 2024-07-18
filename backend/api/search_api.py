@@ -41,23 +41,32 @@ async def search(request: QueryRequest):
 
         result = index.query(
             vector=query_vector,
-              top_k=request.top_k,
+              top_k=request.top_k * 2,
               include_metadata=True
             )
+        
+        unique_links =set()
+        unique_matches = []
 
-        return {
-            "matches": [
-                {
-                    "id": match['id'], 
+        for match in result['matches']:
+            link = match['metadata']['link'] if 'metadata' in match and 'link' in match['metadata'] else None
+            if link and link not in unique_links:
+                unique_links.add(link)
+                unique_matches.append({
+                    "id": match['id'],
                     "score": match['score'],
-                    "link": match['metadata']['link'] if 'metadata' in match else {},
+                    "link": link,
                     "summary": match['metadata']['summary'],
                     "keyword": match['metadata']['keyword'],
-                    "type" : match['metadata'] ['type'],
-                    "title" : match['metadata'] ['title'] if 'metadata' in match else {}
-                }
-                for match in result['matches']
-            ]
+                    "type": match['metadata']['type'],
+                    "title": match['metadata']['title'] if 'metadata' in match and 'title' in match['metadata'] else None
+                })
+
+            if len(unique_matches) >= request.top_k:
+                break
+
+        return {
+            "matches": unique_matches
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
