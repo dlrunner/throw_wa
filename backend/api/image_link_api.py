@@ -73,13 +73,18 @@ async def get_image_embedding_endpoint(request: ImageEmbRequest):
             try:
                 spring_response = await client.post(spring_url, json=payload)
                 spring_response.raise_for_status()
-                print(f"Spring Boot 서버로의 연결이 성공하였습니다. 응답 코드: {spring_response.status_code}")
+                # Spring 응답 본문 출력 (문자열로 변환하여 출력)
+                spring_response_text = spring_response.text
+                print(f"Spring Boot 서버로부터의 응답: {spring_response_text}")
             except httpx.HTTPStatusError as e:
                 print(f"HTTP error: {str(e)}")
-                raise HTTPException(status_code=500, detail="스프링 서버와 연결 중 HTTP 오류가 발생했습니다.")
+                raise HTTPException(status_code=500, detail=f"스프링 서버와 연결 중 HTTP 오류가 발생했습니다. 오류 메시지: {str(e)}")
             except httpx.RequestError as e:
                 print(f"Request error: {str(e)}")
-                raise HTTPException(status_code=500, detail="스프링 서버와 연결 중 요청 오류가 발생했습니다.")
+                raise HTTPException(status_code=500, detail=f"스프링 서버와 연결 중 요청 오류가 발생했습니다. 오류 메시지: {str(e)}")
+            except Exception as e:
+                print(f"Unexpected error: {str(e)}")
+                raise HTTPException(status_code=500, detail=f"스프링 서버와 연결 중 예기치 못한 오류가 발생했습니다. 오류 메시지: {str(e)}")
     except Exception as e:
         print(f"오류 발생: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

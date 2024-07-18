@@ -15,7 +15,8 @@ vector_db = VectorDatabase(
 @router.get("/keyword-rankings")
 async def get_keyword_rankings():
     try:
-        keyword_rankings = vector_db.get_keword_rankings()
+        # 메서드명 수정
+        keyword_rankings = vector_db.get_keyword_rankings()
         if not keyword_rankings:
             return {"rankings": []}
         

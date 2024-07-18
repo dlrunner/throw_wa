@@ -40,7 +40,11 @@ florence_model, florence_processor = load_florence_model()
 # 이미지 캡셔닝 함수
 def imagecaption(image_url: str):
     try:
-        response = requests.get(image_url)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+        }
+        response = requests.get(image_url, headers=headers)
+        response.raise_for_status()
         image = Image.open(BytesIO(response.content))
 
         # 이미지 캡셔닝
@@ -62,14 +66,17 @@ def imagecaption(image_url: str):
 
         return caption
 
+    except requests.exceptions.RequestException as e:
+        print(f"HTTP 오류 발생: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"HTTP 오류: {str(e)}")
     except Exception as e:
         print(f"오류 발생: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # 텍스트 임베딩 함수
 def embed_text(text: str) -> list:
-    # 텍스트를 최대 길이 77로 분할
-    max_length = 77
+    # 텍스트를 최대 길이 77, 510으로 분할
+    max_length = 510
     text_chunks = [text[i:i+max_length] for i in range(0, len(text), max_length)]
     
     embeddings = []
@@ -84,7 +91,14 @@ def embed_text(text: str) -> list:
     mean_embedding = np.mean(embeddings, axis=0)
     return mean_embedding.tolist()
 
+# 불필요한 단어 제거 함수
+def removeword(text: str) -> str:
+    unnecessary = ["이미지는", "보여줍니다"]
+    for part in unnecessary:
+        text = text.replace(part, "")
+    return text.strip()
+
 # Googletrans 번역 함수
 def translate_text(text: str) -> str:
     translated = translator.translate(text, dest='ko')
-    return translated.text
+    return removeword(translated.text)
