@@ -1,11 +1,12 @@
 from fastapi import APIRouter, HTTPException
 from database.vector_db import VectorDatabase
+import os
 
 router = APIRouter()
 
 # 벡터 데이터베이스 설정
 vector_db = VectorDatabase(
-    api_key="a662c43c-d2dd-4e2d-b187-604b1cf9414c",
+    api_key= os.getenv("PINECONE_API_KEY"),
     environment="us-east-1",
     index_name="dlrunner",
     dimension=384
