@@ -86,7 +86,7 @@ class VectorDatabase:
         except PineconeException as e:
             raise ValueError(f"Failed to query vector: {str(e)}")
         
-    def get_keword_rankings(self):
+    def get_keyword_rankings(self):
         try:
             response = self.query_by_metadata({})
             if not response or not response['matches']:

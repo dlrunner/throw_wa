@@ -1,10 +1,9 @@
-// NavBar.js
-
 import React, { useState } from 'react';
 import '../Components/NavBar.css';
 import ChatBox from './ChatBox';
-import BottomBox from './BottomBox'; // 경로 수정
+import BottomBox from './BottomBox';
 import '@fortawesome/fontawesome-free/css/all.min.css';
+import MetamaskLogo from './MetamaskLogo'; // Character 컴포넌트 임포트
 
 const NavBar = () => {
   const [result, setResult] = useState('');
@@ -90,6 +89,7 @@ const NavBar = () => {
 
   return (
     <div className="nav-bar-container">
+      <MetamaskLogo /> {/* Character 컴포넌트 추가 */}
       <h2>Throw-Wa Service</h2>
       <div className="nav-bar-actions">
         <button className="fas-button" onClick={() => setShowUrlInput(!showUrlInput)}>

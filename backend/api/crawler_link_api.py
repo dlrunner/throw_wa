@@ -9,7 +9,9 @@ from models.keyword_text import keyword_extraction
 from models.title_generate import generate_title # 제목 추출
 from database.database import Database
 from database.vector_db import VectorDatabase
-import numpy as np
+from models.summary_text import generate_summary
+from models.keyword_text import keyword_extraction
+from models.title_generate import generate_title  # 제목 추출
 import httpx
 
 router = APIRouter()
@@ -21,6 +23,7 @@ db_config = {
     'password': 'nlrunner',
     'database': 'nlrunner_db'
 }
+
 try:
     db = Database(**db_config)
     db.connect()
@@ -64,13 +67,13 @@ async def add_bookmark(bookmark: Bookmark):
 
     payload = {
         "id": str(id),
-        "embedding" : embedding,
-        "link" : url,
-        "type" : bookmark.type,
-        "date" : bookmark.date,
+        "embedding": embedding,
+        "link": url,
+        "type": bookmark.type,
+        "date": bookmark.date,
         "summary": str(summary_text),
-        "keyword" : str(keyword),
-        "title" : str(show_title)
+        "keyword": str(keyword),
+        "title": str(show_title)
     }
 
     spring_url = "http://localhost:8080/api/embedding"
@@ -83,7 +86,6 @@ async def add_bookmark(bookmark: Bookmark):
             print(f"Error connecting to Spring Boot server: {str(e)}")
             raise HTTPException(status_code=500, detail="스프링 서버와 연결할 수 없습니다.")
 
- 
     return {
         "success": True,
         "id": id,
