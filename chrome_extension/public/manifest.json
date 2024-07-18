@@ -10,6 +10,7 @@
   },
   "permissions": [
     "activeTab",
+    "contextMenus",
     "sidePanel",
     "tabs",
     "<all_urls>"
@@ -17,6 +18,12 @@
   "background": {
     "service_worker": "/extension/background.js"
   },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["/extension/content.js"]
+    }
+  ],
   "action": {
     "default_title": "throw-wa"
   },
