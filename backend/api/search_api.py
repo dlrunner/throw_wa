@@ -5,6 +5,7 @@ import torch
 import pinecone
 import numpy as np
 from models.embedding import embed_text  # 임베딩 함수 호출
+import os
 
 class QueryRequest(BaseModel):
     text: str
@@ -14,22 +15,10 @@ router = APIRouter()
 
 # Pinecone 초기화
 pc = pinecone.Pinecone(
-    api_key="a662c43c-d2dd-4e2d-b187-604b1cf9414c"
+    api_key= os.getenv("PINECONE_API_KEY")
 )
 
 index_name = 'dlrunner'
-
-# 인덱스가 없는 경우 생성
-if index_name not in pc.list_indexes().names():
-    pc.create_index(
-        name=index_name,
-        dimension=768,  
-        metric='cosine',  # 유사도 측정 방법
-        spec=pinecone.ServerlessSpec(
-            cloud='aws',
-            region='us-west-2'
-        )
-    )
 
 index = pc.Index(index_name)
 
