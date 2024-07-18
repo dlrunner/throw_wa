@@ -1,5 +1,7 @@
 .chat-box {
   display: flex;
+  justify-content: center;
+  align-items: center;
   flex-direction: column;
   width: 370px;
   height: 400px;
@@ -133,6 +135,8 @@
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-top: 20px; /* 로딩바와 다른 요소 사이의 간격 */
+  display: flex;
+  justify-self: unset;
 }
 
 @keyframes spin {

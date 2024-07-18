@@ -88,7 +88,7 @@ const ChatBox = () => {
           </button>
         </div>
       </div>
-      {loading && <div className="loading-bar">Loading...</div>}
+      {loading && <div className="loading-bar"></div>}
       {error && <div className="error-message">{error}</div>}
       <div className="chat-messages">
         {messages.map((msg, index) => (
