@@ -34,27 +34,27 @@ class PDFUrl(BaseModel):
 
 async def download_pdf(pdf_url):
     try:
+        # 파일 이름 추출 및 처리 (로컬 파일과 URL 모두에 적용)
+        real_pdf_url = pdf_url.replace('%20', ' ')
+        file_name = real_pdf_url.split('/')[-1]
+
         # 로컬 파일 경로인 경우
-        if pdf_url.startswith('file:///') or os.path.exists(pdf_url):
+        if real_pdf_url.startswith('file:///') or os.path.exists(real_pdf_url):
             # 파일 경로에서 'file:///'를 제거
-            local_path = pdf_url.replace('file:///', '')
+            local_path = real_pdf_url.replace('file:///', '')
             async with aiofiles.open(local_path, 'rb') as file:
                 file_content = await file.read()
         else:
              # 웹 URL인 경우
             async with httpx.AsyncClient() as client:
-                response = await client.get(pdf_url)
+                response = await client.get(real_pdf_url)
                 response.raise_for_status()
                 file_content = response.content
-
-        # 파일 이름 추출 및 처리 (로컬 파일과 URL 모두에 적용)
-        _file_name = pdf_url.split('/')[-1]
-        file_name = _file_name.replace('%20', ' ')
 
         # 파일 내용을 Spring Boot로 전송
         files = {'file': (file_name, file_content)}
         async with httpx.AsyncClient() as client:
-            response = await client.post("http://localhost:8080/api/download", files=files)
+            response = await client.post("http://localhost:8080/api/upload", files=files)
             response.raise_for_status()
 
         # Spring Boot에서 반환한 JSON 응답을 파싱
@@ -119,11 +119,12 @@ async def extract_local_pdf(pdf_url: PDFUrl):
         "summary": str(summary_text),
         "keyword" : str(keyword),
         "title" : str(show_title),
+        "s3OriginalFilename" : str(s3_info['originalFilename']),
         "s3Key": str(s3_info['key']),
         "s3Url": str(s3_info['url'])
     }
 
-        spring_url = "http://localhost:8080/api/embedding"
+        spring_url = "http://localhost:8080/api/embeddingS3"
         async with httpx.AsyncClient() as client:
             try:
                 spring_response = await client.post(spring_url, json=payload)
@@ -141,6 +142,7 @@ async def extract_local_pdf(pdf_url: PDFUrl):
             "title": show_title,
             "keyword" : keyword,
             "embedding": embedding,
+            "s3OriginalFilename" : str(s3_info['originalFilename']),
             "s3Key": str(s3_info['key']),
             "s3Url": str(s3_info['url'])
             }
