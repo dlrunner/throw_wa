@@ -10,9 +10,9 @@ router = APIRouter()
 
 # 벡터 데이터베이스 설정
 vector_db = VectorDatabase(
-    api_key="a662c43c-d2dd-4e2d-b187-604b1cf9414c",
+    api_key="880557b3-5bc5-444b-9fc8-e11a233a7ab5",
     environment="us-east-1",
-    index_name="dlrunner",
+    index_name="throw-wa",
     dimension=384
 )
 

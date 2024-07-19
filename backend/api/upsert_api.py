@@ -10,7 +10,7 @@ router = APIRouter()
 vector_db = VectorDatabase(
     api_key= os.getenv("PINECONE_API_KEY"),
     environment="us-east-1",
-    index_name="dlrunner",
+    index_name="throw-wa",
     dimension=384
 )
 
@@ -23,6 +23,19 @@ class VectorUpsertRequest(BaseModel):
     summary : str # 요약 메타데이터 선언
     keyword : str # 키워드 메타데이터
     title : str # 제목 메타데이터
+
+class VectorS3UpsertRequest(BaseModel):
+    id: str
+    embedding: list[float]
+    link: str
+    type: str # 유튜브인지 웹인지 pdf인지 파악하기 위한 용도
+    date: str # 링크 업로드 날짜 
+    summary : str # 요약 메타데이터 선언
+    keyword : str # 키워드 메타데이터
+    title : str # 제목 메타데이터
+    s3OriginalFilename : str # s3 OriginalFilename 메타데이터
+    s3Key : str # s3 key 메타데이터
+    s3Url : str # s3 url 메타데이터
 
 @router.post("/vector_upsert")
 async def vector_upsert(request: VectorUpsertRequest):
@@ -39,6 +52,32 @@ async def vector_upsert(request: VectorUpsertRequest):
                 "summary" : request.summary,
                 "keyword" : request.keyword,
                 "title" : request.title
+                }
+        )
+
+        return {"success": True}
+    except Exception as e:
+        print(f"오류 발생: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/vector_s3_upsert")
+async def vector_upsert_s3(request: VectorS3UpsertRequest):
+    try:
+
+        # 벡터 디비에 upsert
+        vector_db.upsert_vector(
+            vector_id=request.id,
+            vector=request.embedding,
+            metadata={
+                "link": request.link,
+                "type": request.type,
+                "date": request.date,
+                "summary" : request.summary,
+                "keyword" : request.keyword,
+                "title" : request.title,
+                "s3OriginalFilename" : request.s3OriginalFilename,
+                "s3Key" : request.s3Key,
+                "s3Url" : request.s3Url
                 }
         )
 
