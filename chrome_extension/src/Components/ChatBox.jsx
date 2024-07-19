@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './ChatBox.css';
 import { FaSearch } from 'react-icons/fa'; // Font Awesome Search Icon yarn add react-icons
+import {ClockLoader} from 'react-spinners'
 
 const ChatBox = () => {
   const [messages, setMessages] = useState([]);
@@ -122,7 +123,7 @@ const ChatBox = () => {
           </button>
         </div>
       </div>
-      {loading && <div className="loading-bar">Loading...</div>}
+      {loading && <div className='clock-loader-container'><ClockLoader color="#7289da"size={100}/></div>}
       {error && <div className="error-message">{error}</div>}
       <div className="chat-messages">
         {messages.map((msg, index) => (

@@ -1,12 +1,12 @@
 import React, { Component } from "react";
-import ModelViewer from '@metamask/logo';  // yarn add @metamask/logo 설치하셈
+import ModelViewer from '@metamask/logo';
 
 class MetamaskLogo extends Component {
   componentDidMount() {
     this.viewer = ModelViewer({
       pxNotRatio: true,
-      width: 150,
-      height: 150,
+      width: 120,
+      height: 120,
       followMouse: true
     });
     this.el.appendChild(this.viewer.container);
