@@ -8,10 +8,10 @@ import AppContextProvider from './contexts/AppContextProvider.jsx'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <HashRouter>
+    <BrowserRouter>
       <AppContextProvider>
         <App />
       </AppContextProvider>
-    </HashRouter>
+    </BrowserRouter>
   </React.StrictMode>
 );

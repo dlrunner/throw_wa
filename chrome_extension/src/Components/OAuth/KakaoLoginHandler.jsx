@@ -8,7 +8,7 @@ const KakaoLoginHandler = () => {
 
   const handleOAuthKakao = async (code) => {
     try {
-      const response = await axios.get(`http://localhost:8080/oauth/login/kakao?code=${code}`);
+      const response = await axios.get(`http://localhost:8080/oauth2/login/kakao?code=${code}`);
       const data = response.data;
       alert("로그인 성공: " + data);
       navigate("/home");
@@ -19,14 +19,13 @@ const KakaoLoginHandler = () => {
   };
 
   useEffect(() => {
-    const hash = location.hash;
-    const searchParams = new URLSearchParams(hash.replace("#", "?"));
+    // const hash = location.hash;
+    // const searchParams = new URLSearchParams(hash.replace("#", "?"));
+    const searchParams = new URLSearchParams(location.search);
     const code = searchParams.get('code');
     if (code) {
+      alert("CODE = " + code)
       handleOAuthKakao(code);
-    } else {
-      alert("인증 코드가 없습니다.");
-      navigate("/fail");
     }
   }, [location]);
 

@@ -15,8 +15,8 @@ const App = () => {
         <Route path='/' element={<Onboarding />}></Route>
         <Route path='/home' element={<Home />}></Route>
         {/* <Route path='/signup' element={<SignUp />}></Route> */}
-        {/* <Route path='/login' element={<Login />}></Route> */}
-        {/* <Route path='/oauth/kakao' element={<KakaoLoginHandler />}></Route> */}
+        <Route path='/login' element={<Login />}></Route>
+        <Route path='/oauth2/callback/kakao' element={<KakaoLoginHandler />}></Route>
       </Routes>
     </div>
   );
