@@ -1,19 +1,37 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import '../Components/NavBar.css';
 import ChatBox from './ChatBox';
 import BottomBox from './BottomBox';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import MetamaskLogo from './MetamaskLogo'; // Character 컴포넌트 임포트
+import {BeatLoader} from 'react-spinners' // yarn add react-spinners 설치
 
 const NavBar = () => {
   const [result, setResult] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [url, setUrl] = useState('');
+  const [heading, setHeading] = useState('Throw-wa Service')
+  const [fade, setFade] = useState(false)
+
+  useEffect(() =>{
+    const headings =['Throw-wa Service', '회원님들의 시간은 소중하니까..','생각나는 키워드를 입력해보세요!']
+    let index = 0;
+
+    const interval = setInterval(() => {
+      setFade(true);
+      setTimeout(() => {
+        index = (index + 1) % headings.length;
+        setHeading(headings[index]);
+        setFade(false);
+      }, 500); // 500ms의 페이드 아웃 시간
+    }, 5000);
+
+    return () => clearInterval(interval)
+  }, [])
 
   const handleButtonClick = () => {
     setIsLoading(true);
-    setResult('마킹중!');
 
     chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
       const url = tabs[0].url;
@@ -52,7 +70,6 @@ const NavBar = () => {
 
   const handleUrlSave = () => {
     setIsLoading(true);
-    setResult('마킹중');
 
     fetch('http://localhost:8080/api/url', {
       method: 'POST',
@@ -90,13 +107,13 @@ const NavBar = () => {
   return (
     <div className="nav-bar-container">
       <MetamaskLogo /> {/* Character 컴포넌트 추가 */}
-      <h2>Throw-Wa Service</h2>
+      <h2 className={`fade ${fade ? 'out' : 'in'}`}>{heading}</h2>
       <div className="nav-bar-actions">
         <button className="fas-button" onClick={() => setShowUrlInput(!showUrlInput)}>
           <i className="fas fa-sync-alt"></i> {/* 전환 아이콘 추가 */}
         </button>
         {isLoading ? (
-          <div className="loading-bar"></div>
+          <div className='clock-loader-container-narvar'><BeatLoader color="#7289da"size={20}/></div>
         ) : showUrlInput ? (
           <>
             <input

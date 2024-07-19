@@ -1,3 +1,10 @@
+/* 전체 폰트 스타일 적용 */
+body, html {
+  font-family: 'Roboto', sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 .nav-bar-container {
   display: flex;
   flex-direction: column;
@@ -84,4 +91,19 @@
   background-color: #23272a; /* 디스코드 어두운 입력 배경 */
   color: white;
   width: 30px;
+}
+.clock-loader-container-narvar{
+  margin-left: 80px;
+  text-align: center;
+}
+.fade {
+  transition: opacity 0.5s;
+}
+
+.fade.in {
+  opacity: 1;
+}
+
+.fade.out {
+  opacity: 0;
 }

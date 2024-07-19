@@ -1,5 +1,13 @@
+body, html {
+  font-family: 'Roboto', sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 .chat-box {
   display: flex;
+  justify-content: center;
+  align-items: center;
   flex-direction: column;
   width: 370px;
   height: 400px;
@@ -133,9 +141,15 @@
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-top: 20px; /* 로딩바와 다른 요소 사이의 간격 */
+  display: flex;
+  justify-self: unset;
 }
 
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+.clock-loader-container{
+  margin-top: 90px;
+  text-align: center;
 }
