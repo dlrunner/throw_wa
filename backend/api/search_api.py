@@ -47,7 +47,7 @@ async def search(request: QueryRequest):
                     "link": link,
                     "summary": match['metadata']['summary'],
                     "keyword": match['metadata']['keyword'],
-                    "type": match['metadata']['type'],
+                    "type": match['metadata']['type'] if 'matadata' in match else {},
                     "title": match['metadata']['title'] if 'metadata' in match and 'title' in match['metadata'] else None
                 })
 

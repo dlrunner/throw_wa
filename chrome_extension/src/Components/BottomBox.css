@@ -1,3 +1,9 @@
+body, html {
+  font-family: 'Roboto', sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 .bottom-box {
   display: flex;
   flex-direction: column;
@@ -98,4 +104,8 @@
 }
 .keyword-links{
   margin-top: 10px;
+}
+.beat-loader-container{
+  margin-top: 20px;
+  text-align: center;
 }
