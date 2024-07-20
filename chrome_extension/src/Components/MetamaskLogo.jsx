@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import ModelViewer from '@metamask/logo';  // yarn add @metamask/logo 설치하셈
+import ModelViewer from '@metamask/logo';
 
 class MetamaskLogo extends Component {
   componentDidMount() {

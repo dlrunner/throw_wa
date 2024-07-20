@@ -8,7 +8,7 @@ router = APIRouter()
 vector_db = VectorDatabase(
     api_key= os.getenv("PINECONE_API_KEY"),
     environment="us-east-1",
-    index_name="dlrunner",
+    index_name="throw-wa",
     dimension=384
 )
 

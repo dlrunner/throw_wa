@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './BottomBox.css';
 import { Line, Pie } from 'react-chartjs-2';
 import 'chart.js/auto'; // yarn add chart.js  //  yarn add react-chartjs-2 설치해야됨
+import { BeatLoader } from 'react-spinners';
 
 const BottomBox = () => {
   const [data, setData] = useState(null);
@@ -11,8 +12,13 @@ const BottomBox = () => {
   const [bestKeyword, setBestKeyword] = useState(null);
   const [visibleLinks, setVisibleLinks] = useState({});
   const [keywordLinks, setKeywordLinks] = useState({});
+  const [visibleChart, setVisibleChart] = useState(false); // 차트 가시성 상태 변수 수정
 
   const handleClick = async () => {
+    if (visibleChart) {
+      setVisibleChart(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -40,6 +46,7 @@ const BottomBox = () => {
       const bestRank = keywordRankingsData.rankings[0];
       setBestKeyword(bestRank);
       setRankings(keywordRankingsData.rankings);
+      setVisibleChart(true); // 차트 가시성 설정
     } catch (error) {
       setError(error.message);
     } finally {
@@ -140,21 +147,21 @@ const BottomBox = () => {
       <div className="button-container">
         <button onClick={handleClick} className="bottom-button">Throw Chart</button>
       </div>
-      {loading && <div className="loading-bar"></div>}
+      {loading && <div className="beat-loader-container"><BeatLoader color="#7289da" /></div>}
       {error && <p>Error: {error}</p>}
-      {rankings.length > 0 && (
+      {visibleChart && rankings.length > 0 && (
         <div className="rankings">
           <h3>회원님의 가장 많이 저장한 카테고리는 <strong style={{ color: '#7289da' }}>{bestKeyword.keyword}</strong>입니다</h3>
           <Pie data={getPieChartData()} options={{ onClick: (e, elements) => handlePieChartClick(elements) }} />
         </div>
       )}
-      {Object.keys(keywordLinks).map(keyword => (
+      {visibleChart && Object.keys(keywordLinks).map(keyword => (
         <div key={keyword} className="keyword-links">
           <h3>{keyword} 링크</h3>
           <ul>
             {keywordLinks[keyword].map((link, index) => (
               <li key={index}>
-                <span style={{ fontSize: 'larger'}}>
+                <span style={{ fontSize: 'larger' }}>
                   [{link.type}]
                 </span>
                 <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title} style={{ color: "#9bfe63" }}>
@@ -165,7 +172,7 @@ const BottomBox = () => {
           </ul>
         </div>
       ))}
-      {data && (
+      {visibleChart && data && (
         <div className="chart-container">
           <Line data={getChartData()} options={{ onClick: (e, elements) => handleLineChartClick(elements) }} />
           {Object.keys(visibleLinks).map(date => (
@@ -174,7 +181,7 @@ const BottomBox = () => {
                 <ul>
                   {data.find(item => item.date === date).urls.map((link, index) => (
                     <li key={index}>
-                      <span style={{ fontSize: 'larger'}}>
+                      <span style={{ fontSize: 'larger' }}>
                         [{link.type}]
                       </span>
                       <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title} style={{ color: "#9bfe63" }}>

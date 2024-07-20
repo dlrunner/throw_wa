@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './ChatBox.css';
 import { FaSearch } from 'react-icons/fa'; // Font Awesome Search Icon yarn add react-icons
+import {ClockLoader} from 'react-spinners'
 
 const ChatBox = () => {
   const [messages, setMessages] = useState([]);
@@ -39,6 +40,9 @@ const ChatBox = () => {
         link: match.link,
         summary: match.summary,
         title: match.title,
+        s3OriginalFilename: match.s3OriginalFilename,
+        s3Key: match.s3Key,
+        s3Url: match.s3Url
       }));
 
       setMessages(botMessages);
@@ -60,6 +64,37 @@ const ChatBox = () => {
     const maxLength = 30;
     if (text.length <= maxLength) return text;
     return `${text.substring(0, maxLength)}...`;
+  };
+
+  const s3DownloadBtn = async (s3OriginalFilename, s3Key, s3Url) => {
+    try {
+      const response = await fetch('http://localhost:8080/api/download', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ originalFilename: s3OriginalFilename, key: s3Key, url: s3Url }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to download file');
+      }
+
+      // 파일 다운로드 처리
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = s3OriginalFilename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      setError('파일을 다운로드하는데 실패했습니다.');
+    }
   };
 
   return (
@@ -88,7 +123,7 @@ const ChatBox = () => {
           </button>
         </div>
       </div>
-      {loading && <div className="loading-bar">Loading...</div>}
+      {loading && <div className='clock-loader-container'><ClockLoader color="#7289da"size={100}/></div>}
       {error && <div className="error-message">{error}</div>}
       <div className="chat-messages">
         {messages.map((msg, index) => (
@@ -101,6 +136,11 @@ const ChatBox = () => {
                 <a href={msg.link} target='_blank' rel='noopener noreferrer' title={msg.link} style={{ color: "#9bfe63" }}>
                   {truncateLink(msg.title)}
                 </a>
+                {msg.s3OriginalFilename && msg.s3Key && msg.s3Url && (
+                  <button onClick={() => s3DownloadBtn(msg.s3OriginalFilename, msg.s3Key, msg.s3Url)}>
+                    다운로드
+                  </button>
+                )}
                 <div className='message-summary'>{msg.summary}</div>
               </>
             ) : (

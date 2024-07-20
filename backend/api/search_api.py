@@ -18,7 +18,7 @@ pc = pinecone.Pinecone(
     api_key= os.getenv("PINECONE_API_KEY")
 )
 
-index_name = 'dlrunner'
+index_name = 'throw-wa'
 
 index = pc.Index(index_name)
 
@@ -48,7 +48,10 @@ async def search(request: QueryRequest):
                     "summary": match['metadata']['summary'],
                     "keyword": match['metadata']['keyword'],
                     "type": match['metadata']['type'],
-                    "title": match['metadata']['title'] if 'metadata' in match and 'title' in match['metadata'] else None
+                    "title": match['metadata']['title'] if 'metadata' in match and 'title' in match['metadata'] else None,
+                    "s3OriginalFilename": match['metadata']['s3OriginalFilename'] if 'metadata' in match and 's3OriginalFilename' in match['metadata'] else None,
+                    "s3Key": match['metadata']['s3Key'] if 'metadata' in match and 's3Key' in match['metadata'] else None,
+                    "s3Url": match['metadata']['s3Url'] if 'metadata' in match and 's3Url' in match['metadata'] else None
                 })
 
             if len(unique_matches) >= request.top_k:

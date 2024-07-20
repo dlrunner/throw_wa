@@ -5,14 +5,15 @@ from pydantic import BaseModel
 from database.vector_db import VectorDatabase
 from datetime import datetime, timedelta
 from collections import Counter
+import os
 
 router = APIRouter()
 
 # 벡터 데이터베이스 설정
 vector_db = VectorDatabase(
-    api_key="a662c43c-d2dd-4e2d-b187-604b1cf9414c",
+    api_key= os.getenv("PINECONE_API_KEY"),
     environment="us-east-1",
-    index_name="dlrunner",
+    index_name="throw-wa",
     dimension=384
 )
 
