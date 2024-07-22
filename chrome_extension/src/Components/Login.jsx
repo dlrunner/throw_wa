@@ -41,9 +41,9 @@ const LoginForm = () => {
     }
   }
 
-const onSocialLoginBtnHandler = () => {
-  window.location.href = `${import.meta.env.VITE_API_URL}/oauth2/kakao`;
-}
+  const onSocialLoginBtnHandler = () => {
+    window.location.href = `${import.meta.env.VITE_API_URL}/api/oauth/kakao`;
+  }
 
   const handleSignUp = () => {
     navigate('/signUp')
@@ -70,10 +70,10 @@ const onSocialLoginBtnHandler = () => {
         </div>
       </div>
       <div>
-      <button className="kakao-sign-in-btn" onClick={onSocialLoginBtnHandler} style={{ border: 'none', background: 'none', padding: 0 }}>
-        <img
-          src="https://developers.kakao.com/tool/resource/static/img/button/login/full/ko/kakao_login_medium_narrow.png"
-        />
+        <button className="kakao-sign-in-btn" onClick={onSocialLoginBtnHandler} style={{ border: 'none', background: 'none', padding: 0 }}>
+          <img
+            src="https://developers.kakao.com/tool/resource/static/img/button/login/full/ko/kakao_login_medium_narrow.png"
+          />
         </button>
       </div>
     </>

@@ -1,6 +1,5 @@
 import './App.css';
 import { Route, Routes } from 'react-router-dom';
-import SignUp from './Components/SignUp';
 import Login from './Components/Login';
 import Home from './Components/Home';
 import Onboarding from './Components/OnBorading';
@@ -16,7 +15,7 @@ const App = () => {
         <Route path='/home' element={<Home />}></Route>
         {/* <Route path='/signup' element={<SignUp />}></Route> */}
         <Route path='/login' element={<Login />}></Route>
-        <Route path='/oauth2/callback/kakao' element={<KakaoLoginHandler />}></Route>
+        <Route path='/oauth/callback/kakao' element={<KakaoLoginHandler />}></Route>
       </Routes>
     </div>
   );
