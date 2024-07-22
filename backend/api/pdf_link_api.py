@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel
 import PyPDF2
 import platform
-from database.database import Database
+from database.database_config import DatabaseConfig
 from database.vector_db import VectorDatabase
 from models.embedding import embed_text  # Import the embedding function
 import numpy as np
@@ -16,16 +16,9 @@ import aiofiles # 파일 추출
 
 router = APIRouter()
 
-# MySQL 데이터베이스 연결 설정
-db_config = {
-    'host': '127.0.0.1',
-    'user': 'nlrunner',
-    'password': 'nlrunner',
-    'database': 'nlrunner_db'
-}
-db = Database(**db_config)
-db.connect()
-db.create_table()
+# MySQL 데이터베이스 설정
+db_config = DatabaseConfig()
+db = db_config.get_db()
 
 class PDFUrl(BaseModel):
     url: str  # pdf_path에서 url로 변경
