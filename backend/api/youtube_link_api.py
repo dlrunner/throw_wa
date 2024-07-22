@@ -29,7 +29,7 @@ class TranscribeRequest(BaseModel):
 
 # MySQL 데이터베이스 연결 설정
 db_config = {
-    'host': '127.0.0.1',
+    'host': 'mysql',
     'user': 'nlrunner',
     'password': 'nlrunner',
     'database': 'nlrunner_db'
