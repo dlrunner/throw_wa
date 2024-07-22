@@ -67,7 +67,7 @@ async def download_pdf(pdf_url):
         # 예상치 못한 오류 발생 시 처리
         print(f"오류 발생: {e}")
 
-def extract_text_from_local_pdf(pdf_url: str) -> str:
+async def extract_text_from_local_pdf(pdf_url: str) -> str:
     # URL 디코딩
     decoded_path = urllib.parse.unquote(pdf_url)
     
@@ -98,7 +98,7 @@ def extract_text_from_local_pdf(pdf_url: str) -> str:
 @router.post("/pdf_text")
 async def extract_local_pdf(pdf_url: PDFUrl):
     try:
-        extracted_text = extract_text_from_local_pdf(pdf_url.url)
+        extracted_text = await extract_text_from_local_pdf(pdf_url.url)
         id = db.insert_pdf(pdf_url.url, extracted_text)
         embedding = embed_text(extracted_text)
         summary_text = await generate_summary(extracted_text)

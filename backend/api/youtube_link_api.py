@@ -14,8 +14,12 @@ from models.embedding import embed_text  # 임베딩 함수 호출
 from models.summary_text import generate_summary
 from models.keyword_text import keyword_extraction
 from models.title_generate import generate_title # 제목 추출
+import openai
+import subprocess
 
 router = APIRouter()
+
+openai_api_key = os.getenv("OPENAI_API_KEY")
 
 class TranscribeRequest(BaseModel):
     url: str
@@ -43,31 +47,51 @@ def download_audio(youtube_url, output_path):
             'preferredcodec': 'mp3',
             'preferredquality': '192',
         }],
-        'outtmpl': output_path,
+        'outtmpl': f"{output_path}.%(ext)s",
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([youtube_url])
     print(f"Downloaded audio to {output_path}")
 
+# 오디오 파일 크기 줄이기 함수
+def reduce_audio_file_size(input_path, output_path, bitrate="64k"):
+    command = [
+        "ffmpeg",
+        "-i", input_path,
+        "-b:a", bitrate,
+        output_path
+    ]
+    subprocess.run(command, check=True)
+    print(f"Reduced audio file saved to {output_path}")
+
 # 오디오 -> 텍스트 추출 pip install openai-whisper 설치 필요
 def transcribe_audio(audio_path, language="ko"):
-    model = whisper.load_model("small")
-    result = model.transcribe(audio_path, language=language)
-    return result["text"]
+    openai.api_key = openai_api_key
+    with open(audio_path, "rb") as audio_file:
+        response = openai.Audio.transcribe(
+            model="whisper-1",
+            file=audio_file,
+            language=language
+        )
+    return response["text"]
 
 # 다운 받은 오디오 파일을 복사 후 mp3형태로 whisper로 텍스트 추출후 복사 된 파일 삭제 내용은 디비에 저장
 def process_youtube_link(youtube_url, language="ko"):
     audio_path = "temp_audio"
     actual_audio_path = audio_path + ".mp3"
+    reduced_audio_path = "reduced_audio.mp3"
     
     download_audio(youtube_url, audio_path)
     
     if not os.path.exists(actual_audio_path):
         raise FileNotFoundError(f"Audio file not found: {actual_audio_path}")
     
-    content = transcribe_audio(actual_audio_path, language)
+    reduce_audio_file_size(actual_audio_path, reduced_audio_path)
+    
+    content = transcribe_audio(reduced_audio_path, language)
     
     os.remove(actual_audio_path)
+    os.remove(reduced_audio_path)
     
     # MySQL에 링크와 전사 텍스트 저장
     video_id = db.insert_video(youtube_url, content)
@@ -86,15 +110,15 @@ async def transcribe(request: TranscribeRequest):
         show_title = await generate_title(summary_text)
 
         payload = {
-        "id": str(id),
-        "embedding" : embedding,
-        "link" : request.url,
-        "type" : request.type,
-        "date" : request.date,
-        "summary": str(summary_text),
-        "keyword" : str(keyword),
-        "title" : str(show_title)
-    }
+            "id": str(video_id),
+            "embedding": embedding,
+            "link": request.url,
+            "type": request.type,
+            "date": request.date,
+            "summary": str(summary_text),
+            "keyword": str(keyword),
+            "title": str(show_title)
+        }
 
         spring_url = "http://localhost:8080/api/embedding"
         async with httpx.AsyncClient() as client:
@@ -109,17 +133,12 @@ async def transcribe(request: TranscribeRequest):
         return {
             "success": True,
             "content": result,
-            "요약" : summary_text,
+            "요약": summary_text,
             "title": show_title,
-            "keyword" : keyword,
+            "keyword": keyword,
             "video_id": video_id,
             "embedding": embedding,
-            "type" : request.type
-            }
+            "type": request.type
+        }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-# call_youtube 엔드포인트
-async def call_youtube(link: str):
-    request = TranscribeRequest(url=link)
-    return await transcribe(request)
