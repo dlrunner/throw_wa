@@ -27,11 +27,10 @@ const ChatBox = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch data');
+        throw new Error('데이터를 가져올 수 없습니다.');
       }
 
       const data = await response.json();
-      console.log('응답 데이터:', data);
 
       const botMessages = data.matches.map(match => ({
         text: '링크',
@@ -118,7 +117,7 @@ const ChatBox = () => {
             onKeyDown={handleKeyDown}
             placeholder="찾고싶은 링크의 내용을 적어주세요!"
           />
-          <button onClick={handleSend}>
+          <button className="search-button" onClick={handleSend}>
             <FaSearch /> {/* 돋보기 아이콘 추가 */}
           </button>
         </div>

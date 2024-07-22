@@ -8,15 +8,15 @@ import numpy as np
 from unittest.mock import patch
 from transformers.dynamic_module_utils import get_imports
 from fastapi import HTTPException
-from googletrans import Translator
+from translate import Translator #httpx 와 Googletranslate 버전 충돌때문에 pip install translate 교체 
 
 # 텍스트 임베딩 모델 설정
 model_name = "intfloat/multilingual-e5-small"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 text_model = AutoModel.from_pretrained(model_name)
 
-# Googletrans 번역기 설정
-translator = Translator()
+# Translate 번역기 설정
+translator = Translator(to_lang="ko")
 
 # Florence 모델 설정
 device = torch.device("cpu")
@@ -75,7 +75,7 @@ def imagecaption(image_url: str):
 
 # 텍스트 임베딩 함수
 def embed_text(text: str) -> list:
-    # 텍스트를 최대 길이 77, 510으로 분할
+    # 텍스트를 최대 길이 510으로 분할
     max_length = 510
     text_chunks = [text[i:i+max_length] for i in range(0, len(text), max_length)]
     
@@ -98,7 +98,7 @@ def removeword(text: str) -> str:
         text = text.replace(part, "")
     return text.strip()
 
-# Googletrans 번역 함수
+# Translate 번역 함수
 def translate_text(text: str) -> str:
-    translated = translator.translate(text, dest='ko')
-    return removeword(translated.text)
+    translated = translator.translate(text)
+    return removeword(translated)

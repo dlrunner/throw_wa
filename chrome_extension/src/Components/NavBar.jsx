@@ -4,18 +4,18 @@ import ChatBox from './ChatBox';
 import BottomBox from './BottomBox';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import MetamaskLogo from './MetamaskLogo'; // Character 컴포넌트 임포트
-import {BeatLoader} from 'react-spinners' // yarn add react-spinners 설치
+import { BeatLoader } from 'react-spinners'; // yarn add react-spinners 설치
 
 const NavBar = () => {
   const [result, setResult] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [url, setUrl] = useState('');
-  const [heading, setHeading] = useState('Throw-wa Service')
-  const [fade, setFade] = useState(false)
+  const [heading, setHeading] = useState('Throw-wa Service');
+  const [fade, setFade] = useState(false);
 
-  useEffect(() =>{
-    const headings =['Throw-wa Service', '회원님들의 시간은 소중하니까..','생각나는 키워드를 입력해보세요!']
+  useEffect(() => {
+    const headings = ['Throw-wa Service', '회원님들의 시간은 소중하니까..', '생각나는 키워드를 입력해보세요!'];
     let index = 0;
 
     const interval = setInterval(() => {
@@ -27,93 +27,87 @@ const NavBar = () => {
       }, 500); // 500ms의 페이드 아웃 시간
     }, 5000);
 
-    return () => clearInterval(interval)
-  }, [])
+    return () => clearInterval(interval);
+  }, []);
 
-  const handleButtonClick = () => {
+  const handleButtonClick = async () => {
     setIsLoading(true);
 
-    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+    chrome.tabs.query({ active: true, currentWindow: true }, async function (tabs) {
       const url = tabs[0].url;
 
-      fetch('http://localhost:8080/api/url', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url: url }),
-      })
-        .then(response => {
-          if (!response.ok) {
-            return response.text().then(text => {
-              throw new Error('오류발생' + text);
-            });
-          }
-          return response.json();
-        })
-        .then(data => {
-          if (data.success) {
-            setResult('throw-wa에 저장되었습니다!');
-          } else {
-            throw new Error(data.message || '처리 실패');
-          }
-        })
-        .catch(error => {
-          setResult('오류 발생: ' + error.message);
-        })
-        .finally(() => {
-          setIsLoading(false);
-          setTimeout(() => setResult(''), 3000); // 3초 후에 result 메시지 지우기
+      try {
+        const response = await fetch('http://localhost:8080/api/url', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url: url }),
         });
-    });
-  };
 
-  const handleUrlSave = () => {
-    setIsLoading(true);
-
-    fetch('http://localhost:8080/api/url', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ url: url }),
-    })
-      .then(response => {
         if (!response.ok) {
-          return response.text().then(text => {
-            throw new Error('오류발생:'+ text);
-          });
+          const text = await response.text();
+          throw new Error('오류발생' + text);
         }
-        return response.json();
-      })
-      .then(data => {
+
+        const data = await response.json();
         if (data.success) {
           setResult('throw-wa에 저장되었습니다!');
         } else {
           throw new Error(data.message || '처리 실패');
         }
-      })
-      .catch(error => {
+      } catch (error) {
         setResult('오류 발생: ' + error.message);
-      })
-      .finally(() => {
+      } finally {
         setIsLoading(false);
-        setShowUrlInput(false); // URL 입력란 숨기기
-        setUrl(''); // URL 입력값 초기화
         setTimeout(() => setResult(''), 3000); // 3초 후에 result 메시지 지우기
+      }
+    });
+  };
+
+  const handleUrlSave = async () => {
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:8080/api/url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: url }),
       });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error('오류발생:' + text);
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setResult('throw-wa에 저장되었습니다!');
+      } else {
+        throw new Error(data.message || '처리 실패');
+      }
+    } catch (error) {
+      setResult('오류 발생: ' + error.message);
+    } finally {
+      setIsLoading(false);
+      setShowUrlInput(false); // URL 입력란 숨기기
+      setUrl(''); // URL 입력값 초기화
+      setTimeout(() => setResult(''), 3000); // 3초 후에 result 메시지 지우기
+    }
   };
 
   return (
     <div className="nav-bar-container">
-      <MetamaskLogo /> {/* Character 컴포넌트 추가 */}
+      <MetamaskLogo />
       <h2 className={`fade ${fade ? 'out' : 'in'}`}>{heading}</h2>
       <div className="nav-bar-actions">
         <button className="fas-button" onClick={() => setShowUrlInput(!showUrlInput)}>
           <i className="fas fa-sync-alt"></i> {/* 전환 아이콘 추가 */}
         </button>
         {isLoading ? (
-          <div className='clock-loader-container-narvar'><BeatLoader color="#7289da"size={20}/></div>
+          <div className='clock-loader-container-narvar'><BeatLoader color="#7289da" size={20} /></div>
         ) : showUrlInput ? (
           <>
             <input
@@ -138,7 +132,7 @@ const NavBar = () => {
         <ChatBox />
       </div>
       <div className='bottom-box-container'>
-      <BottomBox /> {/* BottomBox 컴포넌트 추가 */}
+        <BottomBox /> {/* BottomBox 컴포넌트 추가 */}
       </div>
     </div>
   );
