@@ -30,13 +30,13 @@ class ImageEmbRequest(BaseModel):
 async def get_image_embedding_endpoint(request: ImageEmbRequest):
     try:
         # 이미지 캡셔닝 및 텍스트 생성
-        caption = imagecaption(request.url)
+        caption = await imagecaption(request.url)
         
         # 번역 텍스트 생성
-        transcaption = translate_text(caption)
+        transcaption = await translate_text(caption)
         
         # E5 모델을 사용하여 번역된 한글 텍스트 임베딩
-        embedding = embed_text(transcaption)
+        embedding = await embed_text(transcaption)
 
         # 데이터베이스에 결과 저장 (번역된 한국어 캡셔닝만 저장)
         image_id = db.insert_image(request.url, transcaption)
