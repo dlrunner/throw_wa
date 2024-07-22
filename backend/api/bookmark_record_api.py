@@ -11,7 +11,7 @@ router = APIRouter()
 
 # 벡터 데이터베이스 설정
 vector_db = VectorDatabase(
-    api_key=os.getenv("PINECONE_API_KEY"),
+    api_key= os.getenv("PINECONE_API_KEY"),
     environment="us-east-1",
     index_name="throw-wa",
     dimension=384
