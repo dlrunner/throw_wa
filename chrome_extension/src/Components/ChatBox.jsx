@@ -117,7 +117,7 @@ const ChatBox = () => {
             onKeyDown={handleKeyDown}
             placeholder="찾고싶은 링크의 내용을 적어주세요!"
           />
-          <button onClick={handleSend}>
+          <button className="search-button" onClick={handleSend}>
             <FaSearch /> {/* 돋보기 아이콘 추가 */}
           </button>
         </div>

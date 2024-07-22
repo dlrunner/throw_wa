@@ -100,7 +100,7 @@ const NavBar = () => {
 
   return (
     <div className="nav-bar-container">
-      <MetamaskLogo /> {/* Character 컴포넌트 추가 */}
+      <MetamaskLogo />
       <h2 className={`fade ${fade ? 'out' : 'in'}`}>{heading}</h2>
       <div className="nav-bar-actions">
         <button className="fas-button" onClick={() => setShowUrlInput(!showUrlInput)}>
