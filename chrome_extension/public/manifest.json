@@ -13,7 +13,16 @@
     "contextMenus",
     "sidePanel",
     "tabs",
-    "<all_urls>"
+    "cookies",
+    "storage",
+    "http://*/",
+    "https://*/",
+    "chrome-extension://*/"
+  ],
+  "host_permissions": [
+    "http://*/",
+    "https://*/",
+    "chrome-extension://*/"
   ],
   "background": {
     "service_worker": "/extension/background.js"

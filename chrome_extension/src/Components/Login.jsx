@@ -12,8 +12,6 @@ const LoginForm = () => {
     password: '',
   });
 
-  const [cookie, setCookie] = useCookies();
-
   const { email, password } = loginFrm;
 
   const onChangeFrm = (e) => {
@@ -24,29 +22,40 @@ const LoginForm = () => {
     });
   };
 
-  const onLoginFrm = async (e) => {
+  const saveToken = (token) => {
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      chrome.storage.local.set({ jwtToken: token }, function() {
+        console.log('Token is saved');
+      });
+    } else {
+      console.error('chrome.storage is not available');
+    }
+  };
+
+  const onLoginFrm = (e) => {
     e.preventDefault();
     console.log("onLoginFrm:", e);
-    try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/sign-in`,
-        loginFrm,
-        {
-          headers: {
-            "Content-Type": "application/json; charset=utf=8",
-          },
-          withCredentials: true
-        }
-      );      
-      console.log("response:", response);
-      const now = (new Date().getTime()) * 1000
-      const expires = new Date(now + response.data.expirationTime)
-      setCookie('accessToken', response.data.token, { expires, path: '/' })
-      navigate("/home")
-    } catch (error) {
-      console.error("Error:", error);
-    }
-  }
+
+    axios.post(
+      `${import.meta.env.VITE_API_URL}/api/sign-in`,
+      loginFrm,
+      {
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+        },
+        withCredentials: true
+      }
+    )
+      .then(response => {
+        console.log("response:", response);
+        saveToken(response.data.token);
+
+        navigate("/home");
+      })
+      .catch(error => {
+        console.error("Error:", error);
+      });
+  };
 
   const onSocialLoginBtnHandler = () => {
     window.location.href = `${import.meta.env.VITE_API_URL}/api/oauth/kakao`;
