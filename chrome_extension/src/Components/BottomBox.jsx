@@ -23,8 +23,8 @@ const BottomBox = () => {
     setError(null);
     try {
       const [recentWeekResponse, keywordRankingsResponse] = await Promise.all([
-        fetch('http://localhost:8000/api/recent-week'),
-        fetch('http://localhost:8000/api/keyword-rankings')
+        fetch('http://ec2-3-36-92-17.ap-northeast-2.compute.amazonaws.com:8000/api/recent-week'),
+        fetch('http://ec2-3-36-92-17.ap-northeast-2.compute.amazonaws.com:8000/api/keyword-rankings')
       ]);
 
       if (!recentWeekResponse.ok) {

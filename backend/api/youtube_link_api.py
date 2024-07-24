@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import mysql.connector
 from transformers import AutoModel, AutoTokenizer
 import torch
-from database.database import Database
+from database.database_config import DatabaseConfig
 from database.vector_db import VectorDatabase
 import httpx
 from models.embedding import embed_text  # 임베딩 함수 호출
@@ -27,16 +27,9 @@ class TranscribeRequest(BaseModel):
     type: str = "youtube"
     date: str
 
-# MySQL 데이터베이스 연결 설정
-db_config = {
-    'host': '127.0.0.1',
-    'user': 'nlrunner',
-    'password': 'nlrunner',
-    'database': 'nlrunner_db'
-}
-db = Database(**db_config)
-db.connect()
-db.create_table()
+# MySQL 데이터베이스 설정
+db_config = DatabaseConfig()
+db = db_config.get_db()
 
 # 유튜브 오디오 다운로드 함수 pip install yt_dlp 설치 필요
 def download_audio(youtube_url, output_path):
@@ -120,7 +113,7 @@ async def transcribe(request: TranscribeRequest):
             "title": str(show_title)
         }
 
-        spring_url = "http://localhost:8080/api/embedding"
+        spring_url = "http://spring-boot-app:8080/api/embedding"
         async with httpx.AsyncClient() as client:
             try:
                 spring_response = await client.post(spring_url, json=payload)
