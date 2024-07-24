@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from models.embedding import imagecaption, embed_text, translate_text  # 번역 함수 수정
-from database.database import Database
+from database.database_config import DatabaseConfig
 from database.vector_db import VectorDatabase
 import httpx
 from models.summary_text import generate_summary
@@ -12,16 +12,9 @@ import aiofiles # 파일 추출
 
 router = APIRouter()
 
-# MySQL 데이터베이스 연결 설정
-db_config = {
-    'host': '127.0.0.1',
-    'user': 'nlrunner',
-    'password': 'nlrunner',
-    'database': 'nlrunner_db'
-}
-db = Database(**db_config)
-db.connect()
-db.create_table()
+# MySQL 데이터베이스 설정
+db_config = DatabaseConfig()
+db = db_config.get_db()
 
 class ImageEmbRequest(BaseModel):
     url: str
