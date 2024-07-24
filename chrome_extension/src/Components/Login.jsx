@@ -2,6 +2,7 @@ import axios from 'axios';
 import { useState } from 'react';
 import { Form, FormControl } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { useCookies } from 'react-cookie';
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -10,6 +11,8 @@ const LoginForm = () => {
     email: '',
     password: '',
   });
+
+  const [cookie, setCookie] = useCookies();
 
   const { email, password } = loginFrm;
 
@@ -26,7 +29,7 @@ const LoginForm = () => {
     console.log("onLoginFrm:", e);
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/login`,
+        `${import.meta.env.VITE_API_URL}/api/sign-in`,
         loginFrm,
         {
           headers: {
@@ -34,16 +37,20 @@ const LoginForm = () => {
           },
           withCredentials: true
         }
-      );
-      console.log("response:", response.data);
+      );      
+      console.log("response:", response);
+      const now = (new Date().getTime()) * 1000
+      const expires = new Date(now + response.data.expirationTime)
+      setCookie('accessToken', response.data.token, { expires, path: '/' })
+      navigate("/home")
     } catch (error) {
       console.error("Error:", error);
     }
   }
 
-const onSocialLoginBtnHandler = () => {
-  window.location.href = `${import.meta.env.VITE_API_URL}/oauth/kakao`;
-}
+  const onSocialLoginBtnHandler = () => {
+    window.location.href = `${import.meta.env.VITE_API_URL}/api/oauth/kakao`;
+  }
 
   const handleSignUp = () => {
     navigate('/signUp')
@@ -70,10 +77,10 @@ const onSocialLoginBtnHandler = () => {
         </div>
       </div>
       <div>
-      <button className="kakao-sign-in-btn" onClick={onSocialLoginBtnHandler} style={{ border: 'none', background: 'none', padding: 0 }}>
-        <img
-          src="https://developers.kakao.com/tool/resource/static/img/button/login/full/ko/kakao_login_medium_narrow.png"
-        />
+        <button className="kakao-sign-in-btn" onClick={onSocialLoginBtnHandler} style={{ border: 'none', background: 'none', padding: 0 }}>
+          <img
+            src="https://developers.kakao.com/tool/resource/static/img/button/login/full/ko/kakao_login_medium_narrow.png"
+          />
         </button>
       </div>
     </>

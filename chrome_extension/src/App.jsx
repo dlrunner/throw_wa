@@ -1,10 +1,10 @@
 import './App.css';
 import { Route, Routes } from 'react-router-dom';
-import SignUp from './Components/SignUp';
 import Login from './Components/Login';
 import Home from './Components/Home';
 import Onboarding from './Components/OnBoarding';
 import KakaoLoginHandler from './Components/OAuth/KakaoLoginHandler';
+import SignUp from './Components/SignUp';
 
 
 
@@ -14,9 +14,9 @@ const App = () => {
       <Routes>
         <Route path='/' element={<Onboarding />}></Route>
         <Route path='/home' element={<Home />}></Route>
-        {/* <Route path='/signup' element={<SignUp />}></Route> */}
-        {/* <Route path='/login' element={<Login />}></Route> */}
-        {/* <Route path='/oauth/kakao' element={<KakaoLoginHandler />}></Route> */}
+        <Route path='/signUp' element={<SignUp />}></Route>
+        <Route path='/login' element={<Login />}></Route>
+        <Route path='/oauth/callback/kakao' element={<KakaoLoginHandler />}></Route>
       </Routes>
     </div>
   );
