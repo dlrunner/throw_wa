@@ -1,5 +1,5 @@
 import React from 'react';
-import './BookLoader.css'; // 여기서 CSS 파일을 임포트 합니다.
+import './BookLoader.css';
 
 const BookLoader = () => {
   return (

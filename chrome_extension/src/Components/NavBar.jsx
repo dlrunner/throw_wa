@@ -6,6 +6,7 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 import MetamaskLogo from './MetamaskLogo'; // Character 컴포넌트 임포트
 import { BeatLoader } from 'react-spinners'; // yarn add react-spinners 설치
 
+
 const NavBar = () => {
   const [result, setResult] = useState('');
   const [isLoading, setIsLoading] = useState(false);
