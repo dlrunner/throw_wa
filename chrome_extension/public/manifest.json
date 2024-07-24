@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "React-Extension",
+  "name": "Throw-Wa",
   "version": "1.0",
-  "description": "throw-wa",
+  "description": "Throw-Wa",
   "icons": {
     "16": "/extension/icons/icon16.png",
     "48": "/extension/icons/icon48.png",

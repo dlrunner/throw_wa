@@ -25,7 +25,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
       console.log("Tab URL: ", url);
 
       // 크롤링 API 호출
-      fetch('http://localhost:8080/api/url', {
+      fetch('http://ec2-3-36-92-17.ap-northeast-2.compute.amazonaws.com:8080/api/url', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
