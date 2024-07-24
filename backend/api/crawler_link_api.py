@@ -7,7 +7,7 @@ from models.embedding import embed_text  # 임베딩 함수 호출
 from models.summary_text import generate_summary
 from models.keyword_text import keyword_extraction
 from models.title_generate import generate_title # 제목 추출
-from database.database import Database
+from database.database_config import DatabaseConfig
 from database.vector_db import VectorDatabase
 from models.summary_text import generate_summary
 from models.keyword_text import keyword_extraction
@@ -17,20 +17,8 @@ import httpx
 router = APIRouter()
 
 # MySQL 데이터베이스 설정
-db_config = {
-    'host': 'mysql',
-    'user': 'nlrunner',
-    'password': 'nlrunner',
-    'database': 'nlrunner_db'
-}
-
-try:
-    db = Database(**db_config)
-    db.connect()
-    db.create_table()
-except Exception as e:
-    print(f"Database 연결 오류: {e}")
-    raise
+db_config = DatabaseConfig()
+db = db_config.get_db()
 
 # 크롤링 함수
 def crawl_data(url):
@@ -76,7 +64,7 @@ async def add_bookmark(bookmark: Bookmark):
         "title": str(show_title)
     }
 
-    spring_url = "http://localhost:8080/api/embedding"
+    spring_url = "http://spring-boot-app:8080/api/embedding"
     async with httpx.AsyncClient() as client:
         try:
             spring_response = await client.post(spring_url, json=payload)

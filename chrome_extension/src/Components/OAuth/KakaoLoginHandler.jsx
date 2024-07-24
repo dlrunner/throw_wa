@@ -19,14 +19,13 @@ const KakaoLoginHandler = () => {
   };
 
   useEffect(() => {
-    const hash = location.hash;
-    const searchParams = new URLSearchParams(hash.replace("#", "?"));
+    // const hash = location.hash;
+    // const searchParams = new URLSearchParams(hash.replace("#", "?"));
+    const searchParams = new URLSearchParams(location.search);
     const code = searchParams.get('code');
     if (code) {
+      alert("CODE = " + code)
       handleOAuthKakao(code);
-    } else {
-      alert("인증 코드가 없습니다.");
-      navigate("/fail");
     }
   }, [location]);
 

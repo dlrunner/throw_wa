@@ -10,7 +10,7 @@ const Onboarding = () => {
       document.querySelector('.logo').classList.add('wave-effect');
   
       setTimeout(() => {
-        navigate('/home');
+        navigate('/login');
       }, 1000); 
     };
   
