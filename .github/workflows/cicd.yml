@@ -19,6 +19,7 @@ jobs:
 
       - name: Docker build & push to Docker Hub
         run: |
+          cd backend/
           docker build -t ${{ secrets.DOCKER_REPO_FASTAPI }}:latest .
           docker tag ${{ secrets.DOCKER_REPO_FASTAPI }}:latest ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO_FASTAPI }}:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO_FASTAPI }}:latest
