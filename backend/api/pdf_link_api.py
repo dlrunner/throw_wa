@@ -54,7 +54,7 @@ async def download_pdf(pdf_url):
         # 파일 내용을 Spring Boot로 전송
         files = {'file': (file_name, file_content)}
         async with httpx.AsyncClient() as client:
-            response = await client.post("http://localhost:8080/api/upload", files=files)
+            response = await client.post("http://spring-boot-app:8080/api/upload", files=files)
             response.raise_for_status()
 
         # Spring Boot에서 반환한 JSON 응답을 파싱

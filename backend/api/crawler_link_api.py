@@ -76,7 +76,7 @@ async def add_bookmark(bookmark: Bookmark):
         "title": str(show_title)
     }
 
-    spring_url = "http://localhost:8080/api/embedding"
+    spring_url = "http://spring-boot-app:8080/api/embedding"
     async with httpx.AsyncClient() as client:
         try:
             spring_response = await client.post(spring_url, json=payload)
