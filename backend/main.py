@@ -39,10 +39,6 @@ app.include_router(recommend_router, prefix="/api")
 async def sanz():
     return{"message":"sanz"}
 
-@app.get("/wa2")
-async def wa():
-    return{"message":"wa papiruse"}
-
 # 앱 실행 코드
 if __name__ == "__main__":
     import uvicorn
