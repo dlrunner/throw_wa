@@ -18,7 +18,7 @@ const ChatBox = () => {
     setMessages([]);
 
     try {
-      const response = await fetch('http://ec2-3-36-92-17.ap-northeast-2.compute.amazonaws.com:8000/api/search', {
+      const response = await fetch(`${import.meta.env.VITE_PYTHON_API_URL}/api/search`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -67,7 +67,7 @@ const ChatBox = () => {
 
   const s3DownloadBtn = async (s3OriginalFilename, s3Key, s3Url) => {
     try {
-      const response = await fetch('http://ec2-3-36-92-17.ap-northeast-2.compute.amazonaws.com:8080/api/download', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/download`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
