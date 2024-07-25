@@ -4,8 +4,10 @@ FROM python:3.12
 # 작업 디렉토리 설정
 WORKDIR /app
 
-# portaudio 라이브러리 설치
-RUN apt-get update && apt-get install -y portaudio19-dev
+# portaudio 및 ffmpeg 라이브러리 설치
+RUN apt-get update && apt-get install -y \
+    portaudio19-dev \
+    ffmpeg
 
 # requirements.txt 파일을 컨테이너로 복사하기 위함
 COPY requirements.txt /app/
