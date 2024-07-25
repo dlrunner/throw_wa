@@ -46,7 +46,10 @@ body, html {
   }
   
   .login-form {
+    display: flex;
     margin-bottom: 10px;
+    width: 230px;
+    height: 25px;
   }
   
   .login-form input {

@@ -74,7 +74,7 @@ async def extract_text_from_local_pdf(pdf_url: str) -> str:
     # 파일 프로토콜 제거
     if platform.system() == "Windows":
         if decoded_path.startswith("file:///"):
-            decoded_path = decoded_path[8:]
+            decoded_path = decoded_path[8:].replace("C:/Users/user/Downloads", "/mnt/Downloads")
     elif platform.system() == "Darwin":  # macOS
         if decoded_path.startswith("file://"):
             decoded_path = decoded_path[7:]
