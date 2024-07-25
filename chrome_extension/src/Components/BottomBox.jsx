@@ -23,8 +23,8 @@ const BottomBox = () => {
     setError(null);
     try {
       const [recentWeekResponse, keywordRankingsResponse] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL}/api/recent-week`),
-        fetch(`${import.meta.env.VITE_API_URL}/api/keyword-rankings`)
+        fetch(`${import.meta.env.VITE_PYTHON_API_URL}/api/recent-week`),
+        fetch(`${import.meta.env.VITE_PYTHON_API_URL}/api/keyword-rankings`)
       ]);
 
       if (!recentWeekResponse.ok) {
