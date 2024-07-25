@@ -67,7 +67,7 @@ async def extract_text_from_local_pdf(pdf_url: str) -> str:
     # 파일 프로토콜 제거
     if platform.system() == "Windows":
         if decoded_path.startswith("file:///"):
-            decoded_path = decoded_path[8:]
+            decoded_path = decoded_path[8:].replace("C:/Users/user/Downloads", "/mnt/Downloads")
     elif platform.system() == "Darwin":  # macOS
         if decoded_path.startswith("file://"):
             decoded_path = decoded_path[7:]
@@ -117,7 +117,7 @@ async def extract_local_pdf(pdf_url: PDFUrl):
         "s3Url": str(s3_info['url'])
     }
 
-        spring_url = "http://localhost:8080/api/embeddingS3"
+        spring_url = "http://spring-boot-app:8080/api/embeddingS3"
         async with httpx.AsyncClient() as client:
             try:
                 spring_response = await client.post(spring_url, json=payload)
