@@ -49,6 +49,8 @@ class SignUpRequest(BaseModel):
     email: str
     password: str
     name: str
+    type : str
+    role : str
 
 @router.post("/vector_upsert")
 async def vector_upsert(request: VectorUpsertRequest):
@@ -109,7 +111,9 @@ async def sign_up(request: SignUpRequest):
             metadata={
                 "email" : request.email,
                 "password" : request.password,
-                "name" : request.name
+                "name" : request.name,
+                "type" : request.type,
+                "role" : request.role
                 }
         )
 

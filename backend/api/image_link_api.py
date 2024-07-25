@@ -9,12 +9,19 @@ from models.keyword_text import keyword_extraction
 from models.title_generate import generate_title # 제목 추출
 import os
 import aiofiles # 파일 추출
+from dotenv import load_dotenv
 
 router = APIRouter()
 
 # MySQL 데이터베이스 설정
 db_config = DatabaseConfig()
 db = db_config.get_db()
+
+# .env 파일 로드
+load_dotenv()
+
+# 환경 변수 사용
+spring_api_url = os.getenv("SPRING_API_URL")
 
 class ImageEmbRequest(BaseModel):
     url: str
@@ -43,7 +50,7 @@ async def download_img(img_url):
         # 파일 내용을 Spring Boot로 전송
         files = {'file': (file_name, file_content)}
         async with httpx.AsyncClient() as client:
-            response = await client.post("http://localhost:8080/api/upload", files=files)
+            response = await client.post(spring_api_url + "/api/upload", files=files)
             response.raise_for_status()
 
         # Spring Boot에서 반환한 JSON 응답을 파싱
