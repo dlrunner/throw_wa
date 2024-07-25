@@ -39,7 +39,7 @@ app.include_router(recommend_router, prefix="/api")
 async def sanz():
     return{"message":"sanz"}
 
-@app.get("/wa")
+@app.get("/wa2")
 async def wa():
     return{"message":"wa papiruse"}
 
