@@ -1,3 +1,5 @@
+import urllib.parse
+import os
 from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel
 import httpx
@@ -7,10 +9,9 @@ from models.embedding import embed_text  # Import the embedding function
 from models.summary_text import generate_summary
 from models.keyword_text import keyword_extraction
 from models.title_generate import generate_title # 제목 추출
-import os
-import urllib.parse
-from dotenv import load_dotenv
 import PyPDF2
+import aiofiles  # 파일 추출
+from dotenv import load_dotenv
 
 app = FastAPI()
 router = APIRouter()
@@ -36,10 +37,17 @@ async def download_pdf(pdf_url: str):
         real_pdf_url = pdf_url.replace('%20', ' ')
         file_name = real_pdf_url.split('/')[-1]
 
-        async with httpx.AsyncClient() as client:
-            response = await client.get(real_pdf_url)
-            response.raise_for_status()
-            file_content = response.content
+        if real_pdf_url.startswith("file:///") or os.path.exists(real_pdf_url):
+            # 로컬 파일 경로인 경우
+            local_path = real_pdf_url.replace('file:///', '')
+            async with aiofiles.open(local_path, 'rb') as file:
+                file_content = await file.read()
+        else:
+            # 웹 URL인 경우
+            async with httpx.AsyncClient() as client:
+                response = await client.get(real_pdf_url)
+                response.raise_for_status()
+                file_content = response.content
 
         # 파일 내용을 Spring Boot로 전송
         files = {'file': (file_name, file_content)}
@@ -51,18 +59,25 @@ async def download_pdf(pdf_url: str):
         result = response.json()
         return result
     except httpx.HTTPError as e:
-        # 다운로드 또는 업로드 실패 시 처리
         print(f"HTTP 오류 발생: {e.status_code}")
+        raise HTTPException(status_code=500, detail=f"HTTP 오류 발생: {e}")
     except Exception as e:
-        # 예상치 못한 오류 발생 시 처리
         print(f"오류 발생: {e}")
+        raise HTTPException(status_code=500, detail=f"오류 발생: {e}")
 
 async def extract_text_from_url(pdf_url: str) -> str:
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(pdf_url)
-            response.raise_for_status()
-            file_content = response.content
+        if pdf_url.startswith("file:///") or os.path.exists(pdf_url):
+            # 로컬 파일 경로인 경우
+            decoded_path = urllib.parse.unquote(pdf_url.replace('file:///', ''))
+            async with aiofiles.open(decoded_path, 'rb') as file:
+                file_content = await file.read()
+        else:
+            # 웹 URL인 경우
+            async with httpx.AsyncClient() as client:
+                response = await client.get(pdf_url)
+                response.raise_for_status()
+                file_content = response.content
 
         # PDF 내용 추출
         with open("/tmp/temp.pdf", "wb") as f:
@@ -73,10 +88,12 @@ async def extract_text_from_url(pdf_url: str) -> str:
             text = ""
             for page in reader.pages:
                 text += page.extract_text()
-        
+
         return text
     except httpx.HTTPError as e:
         raise HTTPException(status_code=500, detail=f"파일 다운로드 중 오류 발생: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"오류 발생: {str(e)}")
 
 @router.post("/pdf_text")
 async def extract_pdf(pdf_url: PDFUrl):
@@ -130,3 +147,4 @@ async def extract_pdf(pdf_url: PDFUrl):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
