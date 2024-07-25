@@ -35,12 +35,11 @@ app.include_router(upsert_router, prefix="/api")
 app.include_router(record_router, prefix="/api")
 app.include_router(recommend_router, prefix="/api")
 
-app.get('/wa')
+@app.get('/wa')
 async def sanz():
     return{"message":"sanz"}
-
 
 # 앱 실행 코드
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=800)
