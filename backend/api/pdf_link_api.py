@@ -2,18 +2,19 @@ import urllib.parse
 import os
 from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel
-import httpx
+import PyPDF2
+import platform
 from database.database_config import DatabaseConfig
 from database.vector_db import VectorDatabase
 from models.embedding import embed_text  # Import the embedding function
+import numpy as np
+import httpx
 from models.summary_text import generate_summary
 from models.keyword_text import keyword_extraction
 from models.title_generate import generate_title # 제목 추출
-import PyPDF2
-import aiofiles  # 파일 추출
+import aiofiles # 파일 추출
 from dotenv import load_dotenv
 
-app = FastAPI()
 router = APIRouter()
 
 # MySQL 데이터베이스 설정
@@ -28,17 +29,18 @@ spring_api_url = os.getenv("SPRING_API_URL")
 
 class PDFUrl(BaseModel):
     url: str  # pdf_path에서 url로 변경
-    type: str = "PDF"
-    date: str
+    type : str = "PDF"
+    date : str
 
-async def download_pdf(pdf_url: str):
+async def download_pdf(pdf_url):
     try:
-        # 파일 이름 추출 및 처리
+        # 파일 이름 추출 및 처리 (로컬 파일과 URL 모두에 적용)
         real_pdf_url = pdf_url.replace('%20', ' ')
         file_name = real_pdf_url.split('/')[-1]
 
-        if real_pdf_url.startswith("file:///") or os.path.exists(real_pdf_url):
-            # 로컬 파일 경로인 경우
+        # 로컬 파일 경로인 경우
+        if real_pdf_url.startswith('file:///') or os.path.exists(real_pdf_url):
+            # 파일 경로에서 'file:///'를 제거
             local_path = real_pdf_url.replace('file:///', '')
             async with aiofiles.open(local_path, 'rb') as file:
                 file_content = await file.read()
@@ -59,46 +61,43 @@ async def download_pdf(pdf_url: str):
         result = response.json()
         return result
     except httpx.HTTPError as e:
+        # 다운로드 또는 업로드 실패 시 처리
         print(f"HTTP 오류 발생: {e.status_code}")
-        raise HTTPException(status_code=500, detail=f"HTTP 오류 발생: {e}")
     except Exception as e:
+        # 예상치 못한 오류 발생 시 처리
         print(f"오류 발생: {e}")
-        raise HTTPException(status_code=500, detail=f"오류 발생: {e}")
 
-async def extract_text_from_url(pdf_url: str) -> str:
-    try:
-        if pdf_url.startswith("file:///") or os.path.exists(pdf_url):
-            # 로컬 파일 경로인 경우
-            decoded_path = urllib.parse.unquote(pdf_url.replace('file:///', ''))
-            async with aiofiles.open(decoded_path, 'rb') as file:
-                file_content = await file.read()
-        else:
-            # 웹 URL인 경우
-            async with httpx.AsyncClient() as client:
-                response = await client.get(pdf_url)
-                response.raise_for_status()
-                file_content = response.content
+async def extract_text_from_local_pdf(pdf_url: str) -> str:
+    # URL 디코딩
+    decoded_path = urllib.parse.unquote(pdf_url)
 
-        # PDF 내용 추출
-        with open("/tmp/temp.pdf", "wb") as f:
-            f.write(file_content)
-        
-        with open("/tmp/temp.pdf", "rb") as file:
-            reader = PyPDF2.PdfReader(file)
-            text = ""
-            for page in reader.pages:
-                text += page.extract_text()
+    # 파일 프로토콜 제거 및 경로 변환
+    if platform.system() == "Windows":
+        if decoded_path.startswith("file:///"):
+            decoded_path = "/app/local_pdf_directory/" + os.path.basename(decoded_path[8:])
+    elif platform.system() == "Darwin":  # macOS
+        if decoded_path.startswith("file://"):
+            decoded_path = decoded_path[7:]
+    else:  # Linux 및 기타 시스템
+        if decoded_path.startswith("file://"):
+            decoded_path = "/app/local_pdf_directory/" + os.path.basename(decoded_path[7:])
 
-        return text
-    except httpx.HTTPError as e:
-        raise HTTPException(status_code=500, detail=f"파일 다운로드 중 오류 발생: {str(e)}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"오류 발생: {str(e)}")
+    if not os.path.exists(decoded_path):
+        raise FileNotFoundError(f"File not found: {decoded_path}")
 
+    with open(decoded_path, 'rb') as file:
+        reader = PyPDF2.PdfReader(file)
+        text = ""
+        for page in reader.pages:
+            text += page.extract_text()
+
+    return text
+
+# 엔드포인트
 @router.post("/pdf_text")
-async def extract_pdf(pdf_url: PDFUrl):
+async def extract_local_pdf(pdf_url: PDFUrl):
     try:
-        extracted_text = await extract_text_from_url(pdf_url.url)
+        extracted_text = await extract_text_from_local_pdf(pdf_url.url)
         id = db.insert_pdf(pdf_url.url, extracted_text)
         embedding = embed_text(extracted_text)
         summary_text = await generate_summary(extracted_text)
@@ -137,7 +136,7 @@ async def extract_pdf(pdf_url: PDFUrl):
         return {
             "success": True,
             "text": extracted_text,
-            "summary": summary_text,
+            "요약": summary_text,
             "title": show_title,
             "keyword": keyword,
             "embedding": embedding,
@@ -145,6 +144,12 @@ async def extract_pdf(pdf_url: PDFUrl):
             "s3Key": str(s3_info['key']),
             "s3Url": str(s3_info['url'])
         }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# call_pdf 함수 정의
+async def call_pdf(link: str):
+    request = PDFUrl(url=link)
+    return await extract_local_pdf(request)
