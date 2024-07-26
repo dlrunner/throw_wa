@@ -14,6 +14,13 @@ vector_db = VectorDatabase(
     dimension=384
 )
 
+user_db = VectorDatabase(
+    api_key= os.getenv("PINECONE_API_KEY"),
+    environment="us-east-1",
+    index_name="throw-wa-user",
+    dimension=384
+)
+
 class VectorUpsertRequest(BaseModel):
     id: str
     embedding: list[float]
@@ -23,6 +30,8 @@ class VectorUpsertRequest(BaseModel):
     summary : str # 요약 메타데이터 선언
     keyword : str # 키워드 메타데이터
     title : str # 제목 메타데이터
+    userId: str # 로그인 유저 식별값 메타데이터
+    userName: str # 로그인 유저 이름 메타데이터
 
 class VectorS3UpsertRequest(BaseModel):
     id: str
@@ -36,6 +45,16 @@ class VectorS3UpsertRequest(BaseModel):
     s3OriginalFilename : str # s3 OriginalFilename 메타데이터
     s3Key : str # s3 key 메타데이터
     s3Url : str # s3 url 메타데이터
+    userId: str # 로그인 유저 식별값 메타데이터
+    userName: str # 로그인 유저 이름 메타데이터
+
+class SignUpRequest(BaseModel):
+    id: str
+    email: str
+    password: str
+    name: str
+    type : str
+    role : str
 
 @router.post("/vector_upsert")
 async def vector_upsert(request: VectorUpsertRequest):
@@ -51,7 +70,9 @@ async def vector_upsert(request: VectorUpsertRequest):
                 "date": request.date,
                 "summary" : request.summary,
                 "keyword" : request.keyword,
-                "title" : request.title
+                "title" : request.title,
+                "userId": request.userId,
+                "userName": request.userName
                 }
         )
 
@@ -77,7 +98,30 @@ async def vector_upsert_s3(request: VectorS3UpsertRequest):
                 "title" : request.title,
                 "s3OriginalFilename" : request.s3OriginalFilename,
                 "s3Key" : request.s3Key,
-                "s3Url" : request.s3Url
+                "s3Url" : request.s3Url,
+                "userId": request.userId,
+                "userName": request.userName
+                }
+        )
+
+        return {"success": True}
+    except Exception as e:
+        print(f"오류 발생: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.post("/signup_upsert")
+async def sign_up(request: SignUpRequest):
+    try:
+
+        # 유저 디비에 upsert
+        user_db.upsert_vector(
+            vector_id=request.id,
+            metadata={
+                "email" : request.email,
+                "password" : request.password,
+                "name" : request.name,
+                "type" : request.type,
+                "role" : request.role
                 }
         )
 

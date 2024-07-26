@@ -13,12 +13,20 @@ from models.summary_text import generate_summary
 from models.keyword_text import keyword_extraction
 from models.title_generate import generate_title  # 제목 추출
 import httpx
+import os
+from dotenv import load_dotenv
 
 router = APIRouter()
 
 # MySQL 데이터베이스 설정
 db_config = DatabaseConfig()
 db = db_config.get_db()
+
+# .env 파일 로드
+load_dotenv()
+
+# 환경 변수 사용
+spring_api_url = os.getenv("SPRING_API_URL")
 
 # 크롤링 함수
 def crawl_data(url):
@@ -36,6 +44,8 @@ class Bookmark(BaseModel):
     url: str
     type: str = "web"
     date: str
+    userId: str
+    userName: str
 
 # Add bookmark endpoint
 @router.post("/crawler")
@@ -52,7 +62,6 @@ async def add_bookmark(bookmark: Bookmark):
     keyword = await keyword_extraction(summary_text)
     show_title = await generate_title(summary_text)
 
-
     payload = {
         "id": str(id),
         "embedding": embedding,
@@ -61,10 +70,12 @@ async def add_bookmark(bookmark: Bookmark):
         "date": bookmark.date,
         "summary": str(summary_text),
         "keyword": str(keyword),
-        "title": str(show_title)
+        "title": str(show_title),
+        "userId": bookmark.userId,
+        "userName": bookmark.userName
     }
 
-    spring_url = "http://spring-boot-app:8080/api/embedding"
+    spring_url = spring_api_url + "/api/embedding"
     async with httpx.AsyncClient() as client:
         try:
             spring_response = await client.post(spring_url, json=payload)
@@ -82,5 +93,7 @@ async def add_bookmark(bookmark: Bookmark):
         "content_length": len(content),
         "content": content,
         "embedding": embedding,
-        "date": bookmark.date
+        "date": bookmark.date,
+        "userId": bookmark.userId,
+        "userName": bookmark.userName
     }

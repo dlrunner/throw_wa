@@ -3,7 +3,7 @@ from database.database import Database
 class DatabaseConfig:
     def __init__(self):
         self.db_config = {
-            'host': 'mysql',
+            'host': '127.0.0.1',
             'user': 'nlrunner',
             'password': 'nlrunner',
             'database': 'nlrunner_db'

@@ -16,6 +16,7 @@ from models.keyword_text import keyword_extraction
 from models.title_generate import generate_title # 제목 추출
 import openai
 import subprocess
+from dotenv import load_dotenv
 
 router = APIRouter()
 
@@ -26,10 +27,18 @@ class TranscribeRequest(BaseModel):
     language: str = "ko"
     type: str = "youtube"
     date: str
+    userId: str
+    userName: str
 
 # MySQL 데이터베이스 설정
 db_config = DatabaseConfig()
 db = db_config.get_db()
+
+# .env 파일 로드
+load_dotenv()
+
+# 환경 변수 사용
+spring_api_url = os.getenv("SPRING_API_URL")
 
 # 유튜브 오디오 다운로드 함수 pip install yt_dlp 설치 필요
 def download_audio(youtube_url, output_path):
@@ -110,10 +119,12 @@ async def transcribe(request: TranscribeRequest):
             "date": request.date,
             "summary": str(summary_text),
             "keyword": str(keyword),
-            "title": str(show_title)
+            "title": str(show_title),
+            "userId": request.userId,
+            "userName": request.userName
         }
 
-        spring_url = "http://spring-boot-app:8080/api/embedding"
+        spring_url = spring_api_url + "/api/embedding"
         async with httpx.AsyncClient() as client:
             try:
                 spring_response = await client.post(spring_url, json=payload)
@@ -131,7 +142,9 @@ async def transcribe(request: TranscribeRequest):
             "keyword": keyword,
             "video_id": video_id,
             "embedding": embedding,
-            "type": request.type
+            "type": request.type,
+            "userId": request.userId,
+            "userName": request.userName
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
