@@ -18,33 +18,60 @@ const ChatBox = () => {
     setMessages([]);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_PYTHON_API_URL}/api/search`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text: input, top_k: topK }),
+      getToken(async function (token) {
+        if (token) {
+          console.log('Token retrieved:', token);
+          
+          const responseToken = await fetch(`${import.meta.env.VITE_API_URL}/api/validated_search`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ token: token }),
+          });
+
+          if (!responseToken.ok) {
+            throw new Error('Token validation failed');
+          }
+          const jsonToken = responseToken.json
+          console.log(jsonToken);
+
+          const email = jsonToken.email;  // tokenResp에서 email 추출
+          console.log(email);
+
+          console.log("i'm fine!");
+
+          const response = await fetch(`${import.meta.env.VITE_PYTHON_API_URL}/api/search`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ text: input, top_k: topK, email: email }),  // email을 사용
+          });
+
+          if (!response.ok) {
+            throw new Error('데이터를 가져올 수 없습니다.');
+          }
+
+          const data = await response.json();
+
+          const botMessages = data.matches.map(match => ({
+            text: '링크',
+            sender: 'bot',
+            type: match.type,
+            link: match.link,
+            summary: match.summary,
+            title: match.title,
+            s3OriginalFilename: match.s3OriginalFilename,
+            s3Key: match.s3Key,
+            s3Url: match.s3Url
+          }));
+
+          setMessages(botMessages);
+        } else {
+          console.log('No token found');
+        }
       });
-
-      if (!response.ok) {
-        throw new Error('데이터를 가져올 수 없습니다.');
-      }
-
-      const data = await response.json();
-
-      const botMessages = data.matches.map(match => ({
-        text: '링크',
-        sender: 'bot',
-        type: match.type,
-        link: match.link,
-        summary: match.summary,
-        title: match.title,
-        s3OriginalFilename: match.s3OriginalFilename,
-        s3Key: match.s3Key,
-        s3Url: match.s3Url
-      }));
-
-      setMessages(botMessages);
     } catch (error) {
       console.error('Error:', error);
       setError('데이터를 가져오는데 실패했습니다.');
@@ -94,6 +121,12 @@ const ChatBox = () => {
       console.error('Error downloading file:', error);
       setError('파일을 다운로드하는데 실패했습니다.');
     }
+  };
+
+  const getToken = (callback) => {
+    chrome.storage.local.get(['jwtToken'], function (result) {
+      callback(result.jwtToken);
+    });
   };
 
   return (

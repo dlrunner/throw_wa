@@ -18,6 +18,9 @@ pc = pinecone.Pinecone(
     api_key= os.getenv("PINECONE_API_KEY")
 )
 
+# 환경 변수 사용
+spring_api_url = os.getenv("SPRING_API_URL")
+
 index_name = 'throw-wa'
 
 index = pc.Index(index_name)
