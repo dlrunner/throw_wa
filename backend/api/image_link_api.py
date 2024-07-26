@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from models.embedding import imagecaption, embed_text, translate_text  # 번역 함수 수정
-from database.database import Database
+from database.database_config import DatabaseConfig
 from database.vector_db import VectorDatabase
 import httpx
 from models.summary_text import generate_summary
@@ -12,16 +12,9 @@ import aiofiles # 파일 추출
 
 router = APIRouter()
 
-# MySQL 데이터베이스 연결 설정
-db_config = {
-    'host': '127.0.0.1',
-    'user': 'nlrunner',
-    'password': 'nlrunner',
-    'database': 'nlrunner_db'
-}
-db = Database(**db_config)
-db.connect()
-db.create_table()
+# MySQL 데이터베이스 설정
+db_config = DatabaseConfig()
+db = db_config.get_db()
 
 class ImageEmbRequest(BaseModel):
     url: str
@@ -50,7 +43,7 @@ async def download_img(img_url):
         # 파일 내용을 Spring Boot로 전송
         files = {'file': (file_name, file_content)}
         async with httpx.AsyncClient() as client:
-            response = await client.post("http://localhost:8080/api/upload", files=files)
+            response = await client.post("http://spring-boot-app:8080/api/upload", files=files)
             response.raise_for_status()
 
         # Spring Boot에서 반환한 JSON 응답을 파싱
@@ -116,7 +109,7 @@ async def get_image_embedding_endpoint(request: ImageEmbRequest):
             "s3Url": str(s3_info['url'])
         }
 
-        spring_url = "http://localhost:8080/api/embeddingS3"
+        spring_url = "http://spring-boot-app:8080/api/embeddingS3"
         async with httpx.AsyncClient() as client:
             try:
                 spring_response = await client.post(spring_url, json=payload)

@@ -38,7 +38,7 @@ const NavBar = () => {
       const url = tabs[0].url;
 
       try {
-        const response = await fetch('http://ec2-3-36-92-17.ap-northeast-2.compute.amazonaws.com:8080/api/url', {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/url`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -70,7 +70,7 @@ const NavBar = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://ec2-3-36-92-17.ap-northeast-2.compute.amazonaws.com:8080/api/url', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/url`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel
 import PyPDF2
 import platform
-from database.database import Database
+from database.database_config import DatabaseConfig
 from database.vector_db import VectorDatabase
 from models.embedding import embed_text  # Import the embedding function
 import numpy as np
@@ -16,16 +16,9 @@ import aiofiles # 파일 추출
 
 router = APIRouter()
 
-# MySQL 데이터베이스 연결 설정
-db_config = {
-    'host': '127.0.0.1',
-    'user': 'nlrunner',
-    'password': 'nlrunner',
-    'database': 'nlrunner_db'
-}
-db = Database(**db_config)
-db.connect()
-db.create_table()
+# MySQL 데이터베이스 설정
+db_config = DatabaseConfig()
+db = db_config.get_db()
 
 class PDFUrl(BaseModel):
     url: str  # pdf_path에서 url로 변경
@@ -54,7 +47,7 @@ async def download_pdf(pdf_url):
         # 파일 내용을 Spring Boot로 전송
         files = {'file': (file_name, file_content)}
         async with httpx.AsyncClient() as client:
-            response = await client.post("http://localhost:8080/api/upload", files=files)
+            response = await client.post("http://spring-boot-app:8080/api/upload", files=files)
             response.raise_for_status()
 
         # Spring Boot에서 반환한 JSON 응답을 파싱
@@ -74,7 +67,7 @@ async def extract_text_from_local_pdf(pdf_url: str) -> str:
     # 파일 프로토콜 제거
     if platform.system() == "Windows":
         if decoded_path.startswith("file:///"):
-            decoded_path = decoded_path[8:]
+            decoded_path = decoded_path[8:].replace("C:/Users/user/Downloads", "/mnt/Downloads")
     elif platform.system() == "Darwin":  # macOS
         if decoded_path.startswith("file://"):
             decoded_path = decoded_path[7:]
@@ -124,7 +117,7 @@ async def extract_local_pdf(pdf_url: PDFUrl):
         "s3Url": str(s3_info['url'])
     }
 
-        spring_url = "http://localhost:8080/api/embeddingS3"
+        spring_url = "http://spring-boot-app:8080/api/embeddingS3"
         async with httpx.AsyncClient() as client:
             try:
                 spring_response = await client.post(spring_url, json=payload)

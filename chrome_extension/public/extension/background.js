@@ -16,15 +16,6 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === 'getUser') {
-    chrome.storage.sync.get(['username', 'password'], function (data) {
-      sendResponse({ username: data.username, password: data.password });
-    });
-    return true; // Indicates that the response is asynchronous
-  }
-});
-
 // Context menu 클릭 시 크롤링 API 호출
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   console.log("Context menu clicked", info, tab);
@@ -34,7 +25,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
       console.log("Tab URL: ", url);
 
       // 크롤링 API 호출
-      fetch('http://localhost:8080/api/url', {
+      fetch('http://ec2-3-36-92-17.ap-northeast-2.compute.amazonaws.com:8080/api/url', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
