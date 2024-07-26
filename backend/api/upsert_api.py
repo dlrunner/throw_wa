@@ -18,7 +18,7 @@ user_db = VectorDatabase(
     api_key= os.getenv("PINECONE_API_KEY"),
     environment="us-east-1",
     index_name="throw-wa-user",
-    dimension=384
+    dimension=1
 )
 
 class VectorUpsertRequest(BaseModel):
