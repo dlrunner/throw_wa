@@ -74,12 +74,12 @@ async def extract_text_from_local_pdf(pdf_url: str) -> str:
     decoded_path = urllib.parse.unquote(pdf_url)
     
     # 'file://' 프로토콜 제거
-    if decoded_path.startswith("file://"):
-        decoded_path = decoded_path[7:]
+    if decoded_path.startswith("file:///"):
+        decoded_path = decoded_path[8:]
 
     # 경로 구분자 변경
     if platform.system() == "Windows":
-        # Windows에서는 경로의 시작 부분이 /로 되어있을 수 있으므로 제거
+        # 경로의 시작 부분이 '/'로 되어있을 경우 제거
         if decoded_path.startswith('/'):
             decoded_path = decoded_path[1:]
         decoded_path = decoded_path.replace("/", "\\")
