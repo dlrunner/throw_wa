@@ -77,17 +77,22 @@ async def extract_text_from_local_pdf(pdf_url: str) -> str:
     if decoded_path.startswith("file://"):
         decoded_path = decoded_path[7:]
 
-    # 플랫폼에 따라 경로 구분자 변경
+    # 경로 구분자 변경
     if platform.system() == "Windows":
+        # Windows에서는 경로의 시작 부분이 /로 되어있을 수 있으므로 제거
+        if decoded_path.startswith('/'):
+            decoded_path = decoded_path[1:]
         decoded_path = decoded_path.replace("/", "\\")
     else:
         decoded_path = decoded_path.replace("\\", "/")
     
     print(f"Decoded file path: {decoded_path}")
-    
+
+    # 파일 존재 여부 확인
     if not os.path.exists(decoded_path):
         raise FileNotFoundError(f"File not found: {decoded_path}")
     
+    # PDF 파일 읽기
     with open(decoded_path, 'rb') as file:
         reader = PyPDF2.PdfReader(file)
         text = ""
