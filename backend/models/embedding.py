@@ -10,18 +10,16 @@ from transformers.dynamic_module_utils import get_imports
 from fastapi import HTTPException
 from translate import Translator #httpx 와 Googletranslate 버전 충돌때문에 pip install translate 교체 
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 # 텍스트 임베딩 모델 설정
 model_name = "intfloat/multilingual-e5-small"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
-text_model = AutoModel.from_pretrained(model_name).to(device)
+text_model = AutoModel.from_pretrained(model_name)
 
 # Translate 번역기 설정
 translator = Translator(to_lang="ko")
 
 # Florence 모델 설정
-# device = torch.device("cpu")
+device = torch.device("cpu")
 
 def fixed_get_imports(filename: str | os.PathLike) -> list[str]:
     imports = get_imports(filename)
@@ -75,6 +73,24 @@ def imagecaption(image_url: str):
         print(f"오류 발생: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# # 텍스트 임베딩 함수
+# def embed_text(text: str) -> list:
+#     # 텍스트를 최대 길이 510으로 분할
+#     max_length = 510
+#     text_chunks = [text[i:i+max_length] for i in range(0, len(text), max_length)]
+    
+#     embeddings = []
+#     for chunk in text_chunks:
+#         inputs = tokenizer(chunk, return_tensors="pt", padding=True, truncation=True)
+#         with torch.no_grad():
+#             outputs = text_model(**inputs)
+#             text_features = outputs.last_hidden_state.mean(dim=1)
+#         embeddings.append(text_features.squeeze().cpu().numpy())
+    
+#     # 모든 청크 임베딩의 평균을 계산
+#     mean_embedding = np.mean(embeddings, axis=0)
+#     return mean_embedding.tolist()
+
 # 텍스트 임베딩 함수
 def embed_text(text: str) -> list:
     # 텍스트를 최대 길이 510으로 분할
@@ -84,7 +100,6 @@ def embed_text(text: str) -> list:
     embeddings = []
     for chunk in text_chunks:
         inputs = tokenizer(chunk, return_tensors="pt", padding=True, truncation=True)
-        inputs = {k: v.to(device) for k, v in inputs.items()}
         with torch.no_grad():
             outputs = text_model(**inputs)
             text_features = outputs.last_hidden_state.mean(dim=1)
