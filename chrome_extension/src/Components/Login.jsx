@@ -1,30 +1,14 @@
 import axios from 'axios';
-import { useEffect, useState } from 'react';
-import { Form, FormControl } from 'react-bootstrap';
+import { useState } from 'react';
+import { Form, FormControl, InputGroup } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { FaArrowLeft, FaEnvelope, FaLock } from 'react-icons/fa';
 import './Login.css';
 
 const LoginForm = () => {
   const navigate = useNavigate();
 
-  const [heading, setHeading] = useState('아직 회원이 아니신가요?');
-  const [fade, setFade] = useState(false);
-
-  useEffect(() => {
-    const headings = ['아직 회원이 아니신가요?', '링크 찾기를 더 쉽게!', 'Throw-wa!'];
-    let index = 0;
-
-    const interval = setInterval(() => {
-      setFade(true);
-      setTimeout(() => {
-        index = (index + 1) % headings.length;
-        setHeading(headings[index]);
-        setFade(false);
-      }, 500);
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, []);
+  const [heading] = useState('Login');
 
   const [loginFrm, setLoginFrm] = useState({
     email: '',
@@ -34,7 +18,6 @@ const LoginForm = () => {
   const { email, password } = loginFrm;
 
   const onChangeFrm = (e) => {
-    console.log("onChangeFrm:", e);
     setLoginFrm({
       ...loginFrm,
       [e.target.name]: e.target.value,
@@ -53,7 +36,6 @@ const LoginForm = () => {
 
   const onLoginFrm = (e) => {
     e.preventDefault();
-    console.log("onLoginFrm:", e);
 
     axios.post(
       `${import.meta.env.VITE_API_URL}/api/sign-in`,
@@ -66,7 +48,6 @@ const LoginForm = () => {
       }
     )
       .then(response => {
-        console.log("response:", response);
         saveToken(response.data.token);
 
         navigate("/home");
@@ -77,35 +58,51 @@ const LoginForm = () => {
   };
 
   const handleSignUp = () => {
-    navigate('/signUp')
+    navigate('/signUp');
+  };
+
+  const handleBack = () => {
+    navigate(-1);
   };
 
   return (
     <>
+      <button onClick={handleBack} className="nav-button back-button">
+        <FaArrowLeft size={20} /> {/* 화살표 아이콘 추가 */}
+      </button>
       <div className="login-container">
+        <h2 className="login-heading">{heading}</h2>
         <div className="login-box">
-          <h2 className={`login-heading ${fade ? 'out' : 'in'}`}>{heading}</h2>
           <Form onSubmit={onLoginFrm}>
-            <FormControl
-              name="email"
-              className='login-form'
-              placeholder='이메일'
-              value={email}
-              onChange={onChangeFrm}
-            />
-            <FormControl
-              name="password"
-              className='login-form'
-              placeholder='비밀번호'
-              type="password"
-              value={password}
-              onChange={onChangeFrm}
-            />
-            <div className='text-center'>
-              <button type="submit" className="login-button">로그인</button>
+            <InputGroup className="login-form">
+              <InputGroup.Text className="input-icon">
+                <FaEnvelope />
+              </InputGroup.Text>
+              <FormControl
+                name="email"
+                placeholder="이메일"
+                value={email}
+                onChange={onChangeFrm}
+              />
+            </InputGroup>
+            <InputGroup className="login-form">
+              <InputGroup.Text className="input-icon">
+                <FaLock />
+              </InputGroup.Text>
+              <FormControl
+                name="password"
+                placeholder="비밀번호"
+                type="password"
+                value={password}
+                onChange={onChangeFrm}
+              />
+            </InputGroup>
+            <div className="text-center">
+              <button type="submit" className="login-button">Login</button>
             </div>
           </Form>
-          <button onClick={handleSignUp} className="login-button">회원가입</button>
+          <div className="separator">------------------------- 또는 -------------------------</div>
+          <button onClick={handleSignUp} className="login-button">계정등록</button>
         </div>
       </div>
     </>
