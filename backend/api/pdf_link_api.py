@@ -73,18 +73,16 @@ async def extract_text_from_local_pdf(pdf_url: str) -> str:
     # URL 디코딩
     decoded_path = urllib.parse.unquote(pdf_url)
     
-    # 파일 프로토콜 제거
-    if platform.system() == "Windows":
-        if decoded_path.startswith("file:///"):
-            # decoded_path = decoded_path[8:].replace("C:/Users/user/Downloads", "/mnt/Downloads")
-            decoded_path = decoded_path[8:]
-    elif platform.system() == "Darwin":  # macOS
-        if decoded_path.startswith("file://"):
-            decoded_path = decoded_path[7:]
+    # 'file://' 프로토콜 제거
+    if decoded_path.startswith("file://"):
+        decoded_path = decoded_path[7:]
 
+    # 플랫폼에 따라 경로 구분자 변경
+    if platform.system() == "Windows":
+        decoded_path = decoded_path.replace("/", "\\")
+    else:
+        decoded_path = decoded_path.replace("\\", "/")
     
-    # 경로 구분자 변경
-    decoded_path = decoded_path.replace("/", os.path.sep)
     print(f"Decoded file path: {decoded_path}")
     
     if not os.path.exists(decoded_path):
