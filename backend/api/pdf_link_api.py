@@ -29,8 +29,10 @@ spring_api_url = os.getenv("SPRING_API_URL")
 
 class PDFUrl(BaseModel):
     url: str  # pdf_path에서 url로 변경
-    type: str = "PDF"
-    date: str
+    type : str = "PDF"
+    date : str
+    userId: str
+    userName: str
 
 async def download_pdf(file_path: str):
     try:
@@ -51,7 +53,37 @@ async def download_pdf(file_path: str):
     except Exception as e:
         print(f"오류 발생: {e}")
 
-async def extract_text_from_pdf(file_path: str) -> str:
+async def extract_text_from_local_pdf(pdf_url: str) -> str:
+    # URL 디코딩
+    decoded_path = urllib.parse.unquote(pdf_url)
+    
+    # 파일 프로토콜 제거
+    if platform.system() == "Windows":
+        if decoded_path.startswith("file:///"):
+            # decoded_path = decoded_path[8:].replace("C:/Users/user/Downloads", "/mnt/Downloads")
+            decoded_path = decoded_path[8:]
+    elif platform.system() == "Darwin":  # macOS
+        if decoded_path.startswith("file://"):
+            decoded_path = decoded_path[7:]
+
+    
+    # 경로 구분자 변경
+    decoded_path = decoded_path.replace("/", os.path.sep)
+    
+    if not os.path.exists(decoded_path):
+        raise FileNotFoundError(f"File not found: {decoded_path}")
+    
+    with open(decoded_path, 'rb') as file:
+        reader = PyPDF2.PdfReader(file)
+        text = ""
+        for page in reader.pages:
+            text += page.extract_text()
+    
+    return text
+
+# 엔드포인트
+@router.post("/pdf_text")
+async def extract_local_pdf(pdf_url: PDFUrl):
     try:
         with open(file_path, 'rb') as file:
             reader = PyPDF2.PdfReader(file)
@@ -94,7 +126,9 @@ async def extract_pdf(pdf_url: PDFUrl):
         "title": str(show_title),
         "s3OriginalFilename": str(s3_info['originalFilename']),
         "s3Key": str(s3_info['key']),
-        "s3Url": str(s3_info['url'])
+        "s3Url": str(s3_info['url']),
+        "userId": pdf_url.userId,
+        "userName": pdf_url.userName
     }
 
     spring_url = spring_api_url + "/api/embeddingS3"
@@ -107,15 +141,16 @@ async def extract_pdf(pdf_url: PDFUrl):
             print(f"Error connecting to Spring Boot server: {str(e)}")
             raise HTTPException(status_code=500, detail="스프링 서버와 연결할 수 없습니다.")
 
-    return {
-        "success": True,
-        "text": extracted_text,
-        "summary": summary_text,
-        "title": show_title,
-        "keyword": keyword,
-        "embedding": embedding,
-        "s3OriginalFilename": str(s3_info['originalFilename']),
-        "s3Key": str(s3_info['key']),
-        "s3Url": str(s3_info['url'])
-    }
-
+        return {
+            "success": True,
+            "text": extracted_text,
+            "요약": summary_text,
+            "title": show_title,
+            "keyword" : keyword,
+            "embedding": embedding,
+            "s3OriginalFilename" : str(s3_info['originalFilename']),
+            "s3Key": str(s3_info['key']),
+            "s3Url": str(s3_info['url']),
+            "userId": pdf_url.userId,
+            "userName": pdf_url.userName
+            }

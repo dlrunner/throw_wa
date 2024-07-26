@@ -30,6 +30,8 @@ class VectorUpsertRequest(BaseModel):
     summary : str # 요약 메타데이터 선언
     keyword : str # 키워드 메타데이터
     title : str # 제목 메타데이터
+    userId: str # 로그인 유저 식별값 메타데이터
+    userName: str # 로그인 유저 이름 메타데이터
 
 class VectorS3UpsertRequest(BaseModel):
     id: str
@@ -43,6 +45,8 @@ class VectorS3UpsertRequest(BaseModel):
     s3OriginalFilename : str # s3 OriginalFilename 메타데이터
     s3Key : str # s3 key 메타데이터
     s3Url : str # s3 url 메타데이터
+    userId: str # 로그인 유저 식별값 메타데이터
+    userName: str # 로그인 유저 이름 메타데이터
 
 class SignUpRequest(BaseModel):
     id: str
@@ -66,7 +70,9 @@ async def vector_upsert(request: VectorUpsertRequest):
                 "date": request.date,
                 "summary" : request.summary,
                 "keyword" : request.keyword,
-                "title" : request.title
+                "title" : request.title,
+                "userId": request.userId,
+                "userName": request.userName
                 }
         )
 
@@ -92,7 +98,9 @@ async def vector_upsert_s3(request: VectorS3UpsertRequest):
                 "title" : request.title,
                 "s3OriginalFilename" : request.s3OriginalFilename,
                 "s3Key" : request.s3Key,
-                "s3Url" : request.s3Url
+                "s3Url" : request.s3Url,
+                "userId": request.userId,
+                "userName": request.userName
                 }
         )
 

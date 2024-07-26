@@ -27,6 +27,8 @@ class ImageEmbRequest(BaseModel):
     url: str
     type: str = "image"
     date: str
+    userId: str
+    userName: str
 
 async def download_img(img_url):
     try:
@@ -99,7 +101,9 @@ async def get_image_embedding_endpoint(request: ImageEmbRequest):
             "텍스트 임베딩값": embedding,
             "s3OriginalFilename" : str(s3_info['originalFilename']),
             "s3Key": str(s3_info['key']),
-            "s3Url": str(s3_info['url'])
+            "s3Url": str(s3_info['url']),
+            "userId": request.userId,
+            "userName": request.userName
         }
 
         payload = {
@@ -113,7 +117,9 @@ async def get_image_embedding_endpoint(request: ImageEmbRequest):
             "title" : str(show_title),
             "s3OriginalFilename" : str(s3_info['originalFilename']),
             "s3Key": str(s3_info['key']),
-            "s3Url": str(s3_info['url'])
+            "s3Url": str(s3_info['url']),
+            "userId": request.userId,
+            "userName": request.userName
         }
 
         spring_url = spring_api_url + "/api/embeddingS3"
