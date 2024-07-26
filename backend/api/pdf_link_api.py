@@ -77,15 +77,18 @@ async def extract_text_from_local_pdf(pdf_url: str) -> str:
     if decoded_path.startswith("file:///"):
         decoded_path = decoded_path[8:]
 
-    # 경로 구분자 변경
+    # 경로 구분자 변경 및 Docker 컨테이너 경로로 변환
     if platform.system() == "Windows":
-        # 경로의 시작 부분이 '/'로 되어있을 경우 제거
+        # Windows에서는 경로의 시작 부분이 /로 되어있을 수 있으므로 제거
         if decoded_path.startswith('/'):
             decoded_path = decoded_path[1:]
+        # Docker 컨테이너 내 경로로 변환
+        if decoded_path.startswith("C:/"):
+            decoded_path = decoded_path.replace("C:/", "/app/downloads")
         decoded_path = decoded_path.replace("/", "\\")
     else:
         decoded_path = decoded_path.replace("\\", "/")
-    
+
     print(f"Decoded file path: {decoded_path}")
 
     # 파일 존재 여부 확인
