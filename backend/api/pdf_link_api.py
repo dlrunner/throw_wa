@@ -31,6 +31,8 @@ class PDFUrl(BaseModel):
     url: str  # pdf_path에서 url로 변경
     type : str = "PDF"
     date : str
+    userId: str
+    userName: str
 
 async def download_pdf(pdf_url):
     try:
@@ -74,7 +76,8 @@ async def extract_text_from_local_pdf(pdf_url: str) -> str:
     # 파일 프로토콜 제거
     if platform.system() == "Windows":
         if decoded_path.startswith("file:///"):
-            decoded_path = decoded_path[8:].replace("C:/Users/user/Downloads", "/mnt/Downloads")
+            # decoded_path = decoded_path[8:].replace("C:/Users/user/Downloads", "/mnt/Downloads")
+            decoded_path = decoded_path[8:]
     elif platform.system() == "Darwin":  # macOS
         if decoded_path.startswith("file://"):
             decoded_path = decoded_path[7:]
@@ -121,7 +124,9 @@ async def extract_local_pdf(pdf_url: PDFUrl):
         "title" : str(show_title),
         "s3OriginalFilename" : str(s3_info['originalFilename']),
         "s3Key": str(s3_info['key']),
-        "s3Url": str(s3_info['url'])
+        "s3Url": str(s3_info['url']),
+        "userId": pdf_url.userId,
+        "userName": pdf_url.userName
     }
 
         spring_url = spring_api_url + "/api/embeddingS3"
@@ -144,7 +149,9 @@ async def extract_local_pdf(pdf_url: PDFUrl):
             "embedding": embedding,
             "s3OriginalFilename" : str(s3_info['originalFilename']),
             "s3Key": str(s3_info['key']),
-            "s3Url": str(s3_info['url'])
+            "s3Url": str(s3_info['url']),
+            "userId": pdf_url.userId,
+            "userName": pdf_url.userName
             }
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
