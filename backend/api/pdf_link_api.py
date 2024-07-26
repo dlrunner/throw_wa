@@ -85,6 +85,7 @@ async def extract_text_from_local_pdf(pdf_url: str) -> str:
     
     # 경로 구분자 변경
     decoded_path = decoded_path.replace("/", os.path.sep)
+    print(f"Decoded file path: {decoded_path}")
     
     if not os.path.exists(decoded_path):
         raise FileNotFoundError(f"File not found: {decoded_path}")

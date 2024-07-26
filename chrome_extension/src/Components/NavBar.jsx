@@ -3,8 +3,9 @@ import '../Components/NavBar.css';
 import ChatBox from './ChatBox';
 import BottomBox from './BottomBox';
 import '@fortawesome/fontawesome-free/css/all.min.css';
-import MetamaskLogo from './MetamaskLogo'; // Character 컴포넌트 임포트
-import { BeatLoader } from 'react-spinners'; // yarn add react-spinners 설치
+import MetamaskLogo from './MetamaskLogo';
+import { BeatLoader } from 'react-spinners';
+import { CSSTransition } from 'react-transition-group';
 
 const NavBar = () => {
   const [result, setResult] = useState('');
@@ -124,20 +125,30 @@ const NavBar = () => {
         </button>
         {isLoading ? (
           <div className='clock-loader-container-narvar'><BeatLoader color="#7289da" size={20} /></div>
-        ) : showUrlInput ? (
-          <>
-            <input
-              type="text"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="URL 입력"
-              className="url-input"
-            />
-            <button className="nav-button" onClick={handleUrlSave} disabled={isLoading}>
-              마킹
-            </button>
-          </>
         ) : (
+          <>
+            <CSSTransition
+              in={showUrlInput}
+              timeout={600}  // 애니메이션 시간을 600ms로 설정
+              classNames="url-input"
+              unmountOnExit
+            >
+              <input
+                type="text"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="URL 입력"
+                className="url-input"
+              />
+            </CSSTransition>
+            {showUrlInput && (
+              <button className="nav-button" onClick={handleUrlSave} disabled={isLoading}>
+                마킹
+              </button>
+            )}
+          </>
+        )}
+        {!showUrlInput && !isLoading && (
           <button className="nav-button" onClick={handleButtonClick} disabled={isLoading}>
             현재 탭 마킹
           </button>

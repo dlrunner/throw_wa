@@ -4,6 +4,7 @@ body, html {
   padding: 0;
   box-sizing: border-box;
 }
+
 .bottom-box {
   display: flex;
   flex-direction: column;
@@ -84,6 +85,7 @@ body, html {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
 .keyword-links ul {
   padding-left: 20px;
   text-align: left;
@@ -93,19 +95,79 @@ body, html {
   list-style-type: disc;
   margin-left: 20px;
 }
-.bookmark-list ul {
-  padding-left: 20px;
-  text-align: left;
-}
 
-.bookmark-list li {
-  list-style-type: disc;
-  margin-left: 20px;
-}
-.keyword-links{
+.keyword-links {
   margin-top: 10px;
 }
-.beat-loader-container{
+
+.beat-loader-container {
   margin-top: 20px;
   text-align: center;
+}
+
+/* 슬라이드 애니메이션 효과 */
+.chart-enter {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.chart-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 600ms, transform 600ms;
+}
+
+.chart-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.chart-exit-active {
+  opacity: 0;
+  transform: translateX(100%);
+  transition: opacity 600ms, transform 600ms;
+}
+
+.keyword-links-enter {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.keyword-links-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 600ms, transform 600ms;
+}
+
+.keyword-links-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.keyword-links-exit-active {
+  opacity: 0;
+  transform: translateX(100%);
+  transition: opacity 600ms, transform 600ms;
+}
+
+.bookmark-list-enter {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.bookmark-list-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 600ms, transform 600ms;
+}
+
+.bookmark-list-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.bookmark-list-exit-active {
+  opacity: 0;
+  transform: translateX(100%);
+  transition: opacity 600ms, transform 600ms;
 }

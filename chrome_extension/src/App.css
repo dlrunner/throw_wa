@@ -40,3 +40,10 @@
 .read-the-docs {
   color: #888;
 }
+
+.app {
+  min-height: 100vh;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
