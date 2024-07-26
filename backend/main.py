@@ -37,7 +37,7 @@ app.include_router(recommend_router, prefix="/api")
 
 @app.get('/wa')
 async def sanz():
-    return{"message":"수정ㄱㄱㄱㄱㄱㄱㄱㄱㄱ"}
+    return{"message":"바뀌는지 확인"}
 
 # 앱 실행 코드
 if __name__ == "__main__":

@@ -116,7 +116,7 @@ async def get_image_embedding_endpoint(request: ImageEmbRequest):
             "s3Url": str(s3_info['url'])
         }
 
-        spring_url = "http://spring-boot-app:8080/api/embeddingS3"
+        spring_url = spring_api_url + "/api/embeddingS3"
         async with httpx.AsyncClient() as client:
             try:
                 spring_response = await client.post(spring_url, json=payload)
