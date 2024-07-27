@@ -75,7 +75,7 @@ async def extract_text_from_remote_pdf(pdf_url: str) -> str:
         decoded_url = urllib.parse.unquote(pdf_url)
         if decoded_url.startswith("file://"):
             # 로컬 파일 경로로 변환
-            decoded_url = decoded_url[7:]
+            decoded_url = decoded_url[7:].replace("\\", "/")  # Windows 경로에서 슬래시 변환
             # 파일 이름만 추출하여 마운트된 디렉토리 경로로 변환
             decoded_url = os.path.join("/app/downloads", os.path.basename(decoded_url))
             logger.info(f"Extracting text from local PDF path: {decoded_url}")
