@@ -13,6 +13,7 @@ from models.summary_text import generate_summary
 from models.keyword_text import keyword_extraction
 from models.title_generate import generate_title # 제목 추출
 import aiofiles # 파일 추출
+from io import BytesIO
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -30,29 +31,22 @@ spring_api_url = os.getenv("SPRING_API_URL")
 
 class PDFUrl(BaseModel):
     url: str  # pdf_path에서 url로 변경
-    type : str = "PDF"
-    date : str
+    type: str = "PDF"
+    date: str
     userId: str
     userName: str
 
 async def download_pdf(pdf_url):
     try:
-        # 파일 이름 추출 및 처리 (로컬 파일과 URL 모두에 적용)
+        # 파일 이름 추출 및 처리
         real_pdf_url = pdf_url.replace('%20', ' ')
         file_name = real_pdf_url.split('/')[-1]
 
-        # 로컬 파일 경로인 경우
-        if real_pdf_url.startswith('file:///') or os.path.exists(real_pdf_url):
-            # 파일 경로에서 'file:///'를 제거
-            local_path = real_pdf_url.replace('file:///', '')
-            async with aiofiles.open(local_path, 'rb') as file:
-                file_content = await file.read()
-        else:
-             # 웹 URL인 경우
-            async with httpx.AsyncClient() as client:
-                response = await client.get(real_pdf_url)
-                response.raise_for_status()
-                file_content = response.content
+        # HTTP를 통해 PDF 파일 다운로드
+        async with httpx.AsyncClient() as client:
+            response = await client.get(real_pdf_url)
+            response.raise_for_status()
+            file_content = response.content
 
         # 파일 내용을 Spring Boot로 전송
         files = {'file': (file_name, file_content)}
@@ -70,42 +64,35 @@ async def download_pdf(pdf_url):
         # 예상치 못한 오류 발생 시 처리
         print(f"오류 발생: {e}")
 
-async def extract_text_from_local_pdf(pdf_url: str) -> str:
-    # URL 디코딩
-    decoded_path = urllib.parse.unquote(pdf_url)
-    
-    # 'file://' 프로토콜 제거
-    if decoded_path.startswith("file:///"):
-        decoded_path = decoded_path[8:]
+async def extract_text_from_remote_pdf(pdf_url: str) -> str:
+    try:
+        # 파일 URL 디코딩
+        decoded_url = urllib.parse.unquote(pdf_url)
 
-    # 경로 구분자 변경
-    if platform.system() == "Windows":
-        if decoded_path.startswith('/'):
-            decoded_path = decoded_path[1:]
-        path = Path(decoded_path.replace("/", "\\"))
-    else:
-        path = Path(decoded_path.replace("\\", "/"))
+        # HTTP를 통해 PDF 파일 다운로드
+        async with httpx.AsyncClient() as client:
+            response = await client.get(decoded_url)
+            response.raise_for_status()
+            file_content = response.content
 
-    print(f"Decoded file path: {path}")
+        # PDF 파일 읽기
+        text = ""
+        with BytesIO(file_content) as file:
+            reader = PyPDF2.PdfReader(file)
+            for page in reader.pages:
+                text += page.extract_text()
 
-    # 파일 존재 여부 확인
-    if not path.exists():
-        raise FileNotFoundError(f"File not found: {path}")
-    
-    # PDF 파일 읽기
-    text = ""
-    with path.open('rb') as file:
-        reader = PyPDF2.PdfReader(file)
-        for page in reader.pages:
-            text += page.extract_text()
-    
-    return text
+        return text
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=500, detail=f"HTTP Error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
 # 엔드포인트
 @router.post("/pdf_text")
-async def extract_local_pdf(pdf_url: PDFUrl):
+async def extract_remote_pdf(pdf_url: PDFUrl):
     try:
-        extracted_text = await extract_text_from_local_pdf(pdf_url.url)
+        extracted_text = await extract_text_from_remote_pdf(pdf_url.url)
         id = db.insert_pdf(pdf_url.url, extracted_text)
         embedding = embed_text(extracted_text)
         summary_text = await generate_summary(extracted_text)
@@ -118,20 +105,20 @@ async def extract_local_pdf(pdf_url: PDFUrl):
             raise HTTPException(status_code=500, detail=f"PDF 다운로드 중 오류 발생: {str(e)}")
 
         payload = {
-        "id": str(id),
-        "embedding" : embedding,
-        "link" : pdf_url.url,
-        "type" : pdf_url.type,
-        "date" : pdf_url.date,
-        "summary": str(summary_text),
-        "keyword" : str(keyword),
-        "title" : str(show_title),
-        "s3OriginalFilename" : str(s3_info['originalFilename']),
-        "s3Key": str(s3_info['key']),
-        "s3Url": str(s3_info['url']),
-        "userId": pdf_url.userId,
-        "userName": pdf_url.userName
-    }
+            "id": str(id),
+            "embedding": embedding,
+            "link": pdf_url.url,
+            "type": pdf_url.type,
+            "date": pdf_url.date,
+            "summary": str(summary_text),
+            "keyword": str(keyword),
+            "title": str(show_title),
+            "s3OriginalFilename": str(s3_info['originalFilename']),
+            "s3Key": str(s3_info['key']),
+            "s3Url": str(s3_info['url']),
+            "userId": pdf_url.userId,
+            "userName": pdf_url.userName
+        }
 
         spring_url = spring_api_url + "/api/embeddingS3"
         async with httpx.AsyncClient() as client:
@@ -142,27 +129,21 @@ async def extract_local_pdf(pdf_url: PDFUrl):
             except httpx.HTTPError as e:
                 print(f"Error connecting to Spring Boot server: {str(e)}")
                 raise HTTPException(status_code=500, detail="스프링 서버와 연결할 수 없습니다.")
-            
 
         return {
             "success": True,
             "text": extracted_text,
             "요약": summary_text,
             "title": show_title,
-            "keyword" : keyword,
+            "keyword": keyword,
             "embedding": embedding,
-            "s3OriginalFilename" : str(s3_info['originalFilename']),
+            "s3OriginalFilename": str(s3_info['originalFilename']),
             "s3Key": str(s3_info['key']),
             "s3Url": str(s3_info['url']),
             "userId": pdf_url.userId,
             "userName": pdf_url.userName
-            }
+        }
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-# call_pdf 함수 정의
-async def call_pdf(link: str):
-    request = PDFUrl(url=link)
-    return await extract_local_pdf(request)
