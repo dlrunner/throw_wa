@@ -58,12 +58,12 @@ async def download_pdf(pdf_url):
         # Spring Boot에서 반환한 JSON 응답을 파싱
         result = response.json()
         return result
-    except httpx.HTTPStatusError as e:
+    except httpx.HTTPError as e:
         logger.error(f"HTTP 오류 발생: {e.response.status_code} - {e.response.text}")
         raise HTTPException(status_code=500, detail=f"HTTP Error: {e.response.status_code}")
     except Exception as e:
         logger.error(f"오류 발생: {e}")
-        raise HTTPException(status_code=500, detail=f"Error: {e}")
+        raise HTTPException(status_code=500, detail=f"오류: {e}")
 
 async def extract_text_from_remote_pdf(pdf_url: str) -> str:
     try:
@@ -82,14 +82,14 @@ async def extract_text_from_remote_pdf(pdf_url: str) -> str:
                 text += page.extract_text()
 
         return text
-    except httpx.HTTPStatusError as e:
-        logger.error(f"HTTP Error: {e.response.status_code} - {e.response.text}")
+    except httpx.HTTPError as e:
+        logger.error(f"HTTP 오류 발생: {e.response.status_code} - {e.response.text}")
         raise HTTPException(status_code=500, detail=f"HTTP Error: {e.response.status_code}")
     except Exception as e:
-        logger.error(f"Error: {e}")
-        raise HTTPException(status_code=500, detail=f"Error: {e}")
+        logger.error(f"오류 발생: {e}")
+        raise HTTPException(status_code=500, detail=f"오류: {e}")
 
-@router.post("/pdf_text")
+@router.post("/api/pdf_text")
 async def extract_remote_pdf(pdf_url: PDFUrl):
     try:
         logger.info(f"Received request: {pdf_url}")
@@ -127,8 +127,8 @@ async def extract_remote_pdf(pdf_url: PDFUrl):
             spring_response = await client.post(spring_url, json=payload)
             spring_response.raise_for_status()
             logger.info(f"Spring Boot 서버로의 연결이 성공하였습니다. 응답 코드: {spring_response.status_code}")
-        except httpx.HTTPStatusError as e:
-            logger.error(f"Error connecting to Spring Boot server: {e.response.status_code} - {e.response.text}")
+        except httpx.HTTPError as e:
+            logger.error(f"Spring Boot 서버 연결 오류: {e.response.status_code} - {e.response.text}")
             raise HTTPException(status_code=500, detail="스프링 서버와 연결할 수 없습니다.")
 
         return {
