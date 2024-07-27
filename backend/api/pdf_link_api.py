@@ -73,7 +73,7 @@ async def download_pdf(pdf_url):
 
 async def extract_text_from_local_pdf(pdf_url: str) -> str:
     # URL 디코딩
-    decoded_path = pdf_url
+    decoded_path = urllib.parse.unquote(pdf_url)
     print(decoded_path)
     
     # 파일 프로토콜 제거
@@ -85,8 +85,9 @@ async def extract_text_from_local_pdf(pdf_url: str) -> str:
             decoded_path = decoded_path[7:]
 
     
-    # 경로 구분자 변경
-    decoded_path = decoded_path.replace("/", os.path.sep)
+    # 도커 컨테이너 내부 경로로 변경
+    container_path_prefix = "/app/pdf"
+    decoded_path = os.path.join(container_path_prefix, os.path.basename(decoded_path))
     
     if not os.path.exists(decoded_path):
         raise FileNotFoundError(f"파일을 찾을 수 없습니다.: {decoded_path}")
