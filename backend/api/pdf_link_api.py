@@ -78,15 +78,17 @@ async def extract_text_from_local_pdf(pdf_url: str) -> str:
     # 파일 프로토콜 제거
     if decoded_path.startswith("file:///"):
         if platform.system() == "Windows":
-            decoded_path = decoded_path[8:]
+            decoded_path = decoded_path[8:].replace('/', '\\')
         elif platform.system() == "Darwin":  # macOS
             decoded_path = decoded_path[7:]
-    else:
-        raise ValueError(f"Invalid file URL: {decoded_path}")
 
     # 도커 컨테이너 내부 경로로 변경
     container_path_prefix = "/host"
-    decoded_path = os.path.join(container_path_prefix, decoded_path.replace("C:/", "C:/").replace("C:\\", "C:/").replace("\\", "/"))
+    if platform.system() == "Windows":
+        # 윈도우 경로는 /mnt/c 형식으로 변환
+        if decoded_path[1:3] == ':/':
+            decoded_path = decoded_path.replace(':', '', 1).replace('\\', '/')
+        decoded_path = os.path.join(container_path_prefix, decoded_path)
 
     if not os.path.exists(decoded_path):
         raise FileNotFoundError(f"File not found: {decoded_path}")
@@ -143,7 +145,7 @@ async def extract_remote_pdf(pdf_url: PDFUrl):
             raise HTTPException(status_code=500, detail="스프링 서버와 연결할 수 없습니다.")
         except httpx.RequestError as e:
             logger.error(f"HTTP 요청 오류 발생: {e}")
-            raise HTTPException(status_code=500, detail=f"HTTP 요청 오류: {str(e)}")
+            raise HTTPException(status_code=500, detail="HTTP 요청 오류: {str(e)}")
         except AttributeError as e:
             logger.error(f"Spring Boot 서버 연결 중 응답 오류: {e}")
             raise HTTPException(status_code=500, detail=f"Spring Boot 서버 연결 중 응답 오류: {str(e)}")
