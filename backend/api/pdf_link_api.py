@@ -73,7 +73,7 @@ async def download_pdf(pdf_url):
 
 async def extract_text_from_local_pdf(pdf_url: str) -> str:
     # URL 디코딩
-    decoded_path = urllib.parse.unquote(pdf_url)
+    decoded_path = pdf_url
     
     # 파일 프로토콜 제거
     if platform.system() == "Windows":
