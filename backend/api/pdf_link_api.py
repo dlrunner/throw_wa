@@ -45,6 +45,7 @@ async def download_pdf(pdf_url):
         real_pdf_url = pdf_url.replace('%20', ' ')
         file_name = real_pdf_url.split('/')[-1]
 
+        logger.info(f"Downloading PDF from URL: {real_pdf_url}")
         # HTTP를 통해 PDF 파일 다운로드
         response = await client.get(real_pdf_url)
         response.raise_for_status()
@@ -52,6 +53,7 @@ async def download_pdf(pdf_url):
 
         # 파일 내용을 Spring Boot로 전송
         files = {'file': (file_name, file_content)}
+        logger.info(f"Uploading PDF to Spring Boot: {spring_api_url}/api/upload")
         response = await client.post(spring_api_url + "/api/upload", files=files)
         response.raise_for_status()
 
@@ -59,15 +61,16 @@ async def download_pdf(pdf_url):
         result = response.json()
         return result
     except httpx.HTTPError as e:
-        logger.error(f"HTTP 오류 발생: {e.response.status_code} - {e.response.text}")
-        raise HTTPException(status_code=500, detail=f"HTTP Error: {e.response.status_code}")
+        logger.error(f"HTTP 오류 발생: {e}")
+        raise HTTPException(status_code=500, detail=f"HTTP Error: {str(e)}")
     except Exception as e:
         logger.error(f"오류 발생: {e}")
-        raise HTTPException(status_code=500, detail=f"오류: {e}")
+        raise HTTPException(status_code=500, detail=f"오류: {str(e)}")
 
 async def extract_text_from_remote_pdf(pdf_url: str) -> str:
     try:
         decoded_url = urllib.parse.unquote(pdf_url)
+        logger.info(f"Extracting text from PDF URL: {decoded_url}")
 
         # HTTP를 통해 PDF 파일 다운로드
         response = await client.get(decoded_url)
@@ -83,11 +86,11 @@ async def extract_text_from_remote_pdf(pdf_url: str) -> str:
 
         return text
     except httpx.HTTPError as e:
-        logger.error(f"HTTP 오류 발생: {e.response.status_code} - {e.response.text}")
-        raise HTTPException(status_code=500, detail=f"HTTP Error: {e.response.status_code}")
+        logger.error(f"HTTP 오류 발생: {e}")
+        raise HTTPException(status_code=500, detail=f"HTTP Error: {str(e)}")
     except Exception as e:
         logger.error(f"오류 발생: {e}")
-        raise HTTPException(status_code=500, detail=f"오류: {e}")
+        raise HTTPException(status_code=500, detail=f"오류: {str(e)}")
 
 @router.post("/pdf_text")
 async def extract_remote_pdf(pdf_url: PDFUrl):
@@ -124,12 +127,16 @@ async def extract_remote_pdf(pdf_url: PDFUrl):
 
         spring_url = spring_api_url + "/api/embeddingS3"
         try:
+            logger.info(f"Sending data to Spring Boot: {spring_url}")
             spring_response = await client.post(spring_url, json=payload)
             spring_response.raise_for_status()
             logger.info(f"Spring Boot 서버로의 연결이 성공하였습니다. 응답 코드: {spring_response.status_code}")
         except httpx.HTTPError as e:
-            logger.error(f"Spring Boot 서버 연결 오류: {e.response.status_code} - {e.response.text}")
+            logger.error(f"Spring Boot 서버 연결 오류: {e}")
             raise HTTPException(status_code=500, detail="스프링 서버와 연결할 수 없습니다.")
+        except AttributeError as e:
+            logger.error(f"Spring Boot 서버 연결 중 응답 오류: {e}")
+            raise HTTPException(status_code=500, detail=f"Spring Boot 서버 연결 중 응답 오류: {str(e)}")
 
         return {
             "success": True,
