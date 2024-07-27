@@ -33,13 +33,13 @@ const ChatBox = () => {
           if (!responseToken.ok) {
             throw new Error('Token validation failed');
           }
-          const jsonToken = responseToken.json
-          console.log(jsonToken);
 
-          const email = jsonToken.email;  // tokenResp에서 email 추출
+          console.log("responseToken");
+          console.log(responseToken);
+
+          const tokenData = await responseToken.json(); // 응답을 JSON으로 파싱
+          const { email } = tokenData;  // 구조 분해 할당으로 email 추출
           console.log(email);
-
-          console.log("i'm fine!");
 
           const response = await fetch(`${import.meta.env.VITE_PYTHON_API_URL}/api/search`, {
             method: 'POST',
@@ -54,7 +54,7 @@ const ChatBox = () => {
           }
 
           const data = await response.json();
-
+          console.log(data);
           const botMessages = data.matches.map(match => ({
             text: '링크',
             sender: 'bot',
@@ -66,6 +66,7 @@ const ChatBox = () => {
             s3Key: match.s3Key,
             s3Url: match.s3Url
           }));
+          console.log(botMessages);
 
           setMessages(botMessages);
         } else {
