@@ -7,6 +7,7 @@ from database.database_config import DatabaseConfig
 from database.vector_db import VectorDatabase
 from models.embedding import embed_text
 import httpx
+import platform
 from models.summary_text import generate_summary
 from models.keyword_text import keyword_extraction
 from models.title_generate import generate_title
@@ -70,29 +71,32 @@ async def download_pdf(pdf_url):
         logger.error(f"오류 발생: {e}")
         raise HTTPException(status_code=500, detail=f"오류: {str(e)}")
 
-async def extract_text_from_remote_pdf(pdf_url: str) -> str:
-    try:
-        decoded_url = urllib.parse.unquote(pdf_url)
-        if decoded_url.startswith("file://"):
-            # 로컬 파일 경로로 변환
-            decoded_url = decoded_url[7:].replace("\\", "/")  # Windows 경로에서 슬래시 변환
-            # 파일 이름만 추출하여 마운트된 디렉토리 경로로 변환
-            decoded_url = os.path.join("/app/downloads", os.path.basename(decoded_url))
-            logger.info(f"Extracting text from local PDF path: {decoded_url}")
-        else:
-            logger.info(f"Extracting text from remote PDF URL: {decoded_url}")
+async def extract_text_from_local_pdf(pdf_url: str) -> str:
+    # URL 디코딩
+    decoded_path = urllib.parse.unquote(pdf_url)
+    
+    # 파일 프로토콜 제거
+    if platform.system() == "Windows":
+        if decoded_path.startswith("file:///"):
+            decoded_path = decoded_path[8:]
+    elif platform.system() == "Darwin":  # macOS
+        if decoded_path.startswith("file://"):
+            decoded_path = decoded_path[7:]
 
-        # PDF 파일 읽기
+    
+    # 경로 구분자 변경
+    decoded_path = decoded_path.replace("/", os.path.sep)
+    
+    if not os.path.exists(decoded_path):
+        raise FileNotFoundError(f"파일을 찾을 수 없습니다.: {decoded_path}")
+    
+    with open(decoded_path, 'rb') as file:
+        reader = PyPDF2.PdfReader(file)
         text = ""
-        with open(decoded_url, 'rb') as file:
-            reader = PyPDF2.PdfReader(file)
-            for page in reader.pages:
-                text += page.extract_text()
-
-        return text
-    except Exception as e:
-        logger.error(f"오류 발생: {e}")
-        raise HTTPException(status_code=500, detail=f"오류: {str(e)}")
+        for page in reader.pages:
+            text += page.extract_text()
+    
+    return text
 
 @router.post("/pdf_text")
 async def extract_remote_pdf(pdf_url: PDFUrl):
