@@ -1,13 +1,17 @@
-import ctypes
-import os
+import requests
 
-if os.name == "nt":
-    libc_name = "msvcrt.dll"
-else:
-    import ctypes.util
-    libc_name = ctypes.util.find_library("c")
+url = "http://ec2-3-36-89-153.ap-northeast-2.compute.amazonaws.com:8000/api/pdf_text"
+data = {
+    "url": "http://http-server:8000/The%20Science%20of%20Detecting%20LLM%20Generated%20Texts.pdf",
+    "type": "PDF",
+    "date": "2023-01-01",
+    "userId": "user123",
+    "userName": "John Doe"
+}
 
-if libc_name is None:
-    raise ValueError("Could not find libc library")
-
-libc = ctypes.CDLL(libc_name)
+try:
+    response = requests.post(url, json=data)
+    response.raise_for_status()  # HTTPError 발생 시 예외 처리
+    print(response.json())
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
