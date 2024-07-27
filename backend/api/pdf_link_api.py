@@ -90,12 +90,6 @@ async def extract_text_from_remote_pdf(pdf_url: str) -> str:
                 text += page.extract_text()
 
         return text
-    except httpx.HTTPStatusError as e:
-        logger.error(f"HTTP 상태 오류 발생: {e.response.status_code} - {e.response.text}")
-        raise HTTPException(status_code=500, detail=f"HTTP 상태 오류: {e.response.status_code}")
-    except httpx.RequestError as e:
-        logger.error(f"HTTP 요청 오류 발생: {e}")
-        raise HTTPException(status_code=500, detail=f"HTTP 요청 오류: {str(e)}")
     except Exception as e:
         logger.error(f"오류 발생: {e}")
         raise HTTPException(status_code=500, detail=f"오류: {str(e)}")
