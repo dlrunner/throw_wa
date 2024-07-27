@@ -102,7 +102,7 @@ async def extract_text_from_local_pdf(pdf_url: str) -> str:
 async def extract_remote_pdf(pdf_url: PDFUrl):
     try:
         logger.info(f"Received request: {pdf_url}")
-        extracted_text = await extract_text_from_remote_pdf(pdf_url.url)
+        extracted_text = await extract_text_from_local_pdf(pdf_url.url)
         id = db.insert_pdf(pdf_url.url, extracted_text)
         embedding = embed_text(extracted_text)
         summary_text = await generate_summary(extracted_text)
