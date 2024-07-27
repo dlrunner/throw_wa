@@ -89,7 +89,7 @@ async def extract_text_from_remote_pdf(pdf_url: str) -> str:
         logger.error(f"오류 발생: {e}")
         raise HTTPException(status_code=500, detail=f"오류: {e}")
 
-@router.post("/api/pdf_text")
+@router.post("/pdf_text")
 async def extract_remote_pdf(pdf_url: PDFUrl):
     try:
         logger.info(f"Received request: {pdf_url}")
