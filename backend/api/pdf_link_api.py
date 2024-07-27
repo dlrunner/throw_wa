@@ -54,15 +54,18 @@ async def download_pdf(pdf_url):
         # 파일 내용을 Spring Boot로 전송
         files = {'file': (file_name, file_content)}
         logger.info(f"Uploading PDF to Spring Boot: {spring_api_url}/api/upload")
-        response = await client.post(spring_api_url + "/api/upload", files=files)
+        response = await client.post(f"{spring_api_url}/api/upload", files=files)
         response.raise_for_status()
 
         # Spring Boot에서 반환한 JSON 응답을 파싱
         result = response.json()
         return result
-    except httpx.HTTPError as e:
-        logger.error(f"HTTP 오류 발생: {e}")
-        raise HTTPException(status_code=500, detail=f"HTTP Error: {str(e)}")
+    except httpx.HTTPStatusError as e:
+        logger.error(f"HTTP 상태 오류 발생: {e.response.status_code} - {e.response.text}")
+        raise HTTPException(status_code=500, detail=f"HTTP 상태 오류: {e.response.status_code}")
+    except httpx.RequestError as e:
+        logger.error(f"HTTP 요청 오류 발생: {e}")
+        raise HTTPException(status_code=500, detail=f"HTTP 요청 오류: {str(e)}")
     except Exception as e:
         logger.error(f"오류 발생: {e}")
         raise HTTPException(status_code=500, detail=f"오류: {str(e)}")
@@ -70,24 +73,29 @@ async def download_pdf(pdf_url):
 async def extract_text_from_remote_pdf(pdf_url: str) -> str:
     try:
         decoded_url = urllib.parse.unquote(pdf_url)
-        logger.info(f"Extracting text from PDF URL: {decoded_url}")
-
-        # HTTP를 통해 PDF 파일 다운로드
-        response = await client.get(decoded_url)
-        response.raise_for_status()
-        file_content = response.content
+        if decoded_url.startswith("file://"):
+            # 로컬 파일 경로로 변환
+            decoded_url = decoded_url[7:]
+            # 파일 이름만 추출하여 마운트된 디렉토리 경로로 변환
+            decoded_url = os.path.join("/app/downloads", os.path.basename(decoded_url))
+            logger.info(f"Extracting text from local PDF path: {decoded_url}")
+        else:
+            logger.info(f"Extracting text from remote PDF URL: {decoded_url}")
 
         # PDF 파일 읽기
         text = ""
-        with BytesIO(file_content) as file:
+        with open(decoded_url, 'rb') as file:
             reader = PyPDF2.PdfReader(file)
             for page in reader.pages:
                 text += page.extract_text()
 
         return text
-    except httpx.HTTPError as e:
-        logger.error(f"HTTP 오류 발생: {e}")
-        raise HTTPException(status_code=500, detail=f"HTTP Error: {str(e)}")
+    except httpx.HTTPStatusError as e:
+        logger.error(f"HTTP 상태 오류 발생: {e.response.status_code} - {e.response.text}")
+        raise HTTPException(status_code=500, detail=f"HTTP 상태 오류: {e.response.status_code}")
+    except httpx.RequestError as e:
+        logger.error(f"HTTP 요청 오류 발생: {e}")
+        raise HTTPException(status_code=500, detail=f"HTTP 요청 오류: {str(e)}")
     except Exception as e:
         logger.error(f"오류 발생: {e}")
         raise HTTPException(status_code=500, detail=f"오류: {str(e)}")
@@ -125,15 +133,18 @@ async def extract_remote_pdf(pdf_url: PDFUrl):
             "userName": pdf_url.userName
         }
 
-        spring_url = spring_api_url + "/api/embeddingS3"
+        spring_url = f"{spring_api_url}/api/embeddingS3"
         try:
             logger.info(f"Sending data to Spring Boot: {spring_url}")
             spring_response = await client.post(spring_url, json=payload)
             spring_response.raise_for_status()
             logger.info(f"Spring Boot 서버로의 연결이 성공하였습니다. 응답 코드: {spring_response.status_code}")
-        except httpx.HTTPError as e:
-            logger.error(f"Spring Boot 서버 연결 오류: {e}")
+        except httpx.HTTPStatusError as e:
+            logger.error(f"Spring Boot 서버 연결 오류: {e.response.status_code} - {e.response.text}")
             raise HTTPException(status_code=500, detail="스프링 서버와 연결할 수 없습니다.")
+        except httpx.RequestError as e:
+            logger.error(f"HTTP 요청 오류 발생: {e}")
+            raise HTTPException(status_code=500, detail=f"HTTP 요청 오류: {str(e)}")
         except AttributeError as e:
             logger.error(f"Spring Boot 서버 연결 중 응답 오류: {e}")
             raise HTTPException(status_code=500, detail=f"Spring Boot 서버 연결 중 응답 오류: {str(e)}")
