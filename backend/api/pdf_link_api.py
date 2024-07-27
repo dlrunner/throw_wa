@@ -14,6 +14,7 @@ from models.keyword_text import keyword_extraction
 from models.title_generate import generate_title # 제목 추출
 import aiofiles # 파일 추출
 from dotenv import load_dotenv
+from pathlib import Path
 
 router = APIRouter()
 
@@ -77,28 +78,24 @@ async def extract_text_from_local_pdf(pdf_url: str) -> str:
     if decoded_path.startswith("file:///"):
         decoded_path = decoded_path[8:]
 
-    # 경로 구분자 변경 및 Docker 컨테이너 경로로 변환
+    # 경로 구분자 변경
     if platform.system() == "Windows":
-        # Windows에서는 경로의 시작 부분이 /로 되어있을 수 있으므로 제거
         if decoded_path.startswith('/'):
             decoded_path = decoded_path[1:]
-        # Docker 컨테이너 내 경로로 변환
-        if decoded_path.startswith("C:/"):
-            decoded_path = decoded_path.replace("C:/", "/app/downloads")
-        decoded_path = decoded_path.replace("/", "\\")
+        path = Path(decoded_path.replace("/", "\\"))
     else:
-        decoded_path = decoded_path.replace("\\", "/")
+        path = Path(decoded_path.replace("\\", "/"))
 
-    print(f"Decoded file path: {decoded_path}")
+    print(f"Decoded file path: {path}")
 
     # 파일 존재 여부 확인
-    if not os.path.exists(decoded_path):
-        raise FileNotFoundError(f"File not found: {decoded_path}")
+    if not path.exists():
+        raise FileNotFoundError(f"File not found: {path}")
     
     # PDF 파일 읽기
-    with open(decoded_path, 'rb') as file:
+    text = ""
+    with path.open('rb') as file:
         reader = PyPDF2.PdfReader(file)
-        text = ""
         for page in reader.pages:
             text += page.extract_text()
     

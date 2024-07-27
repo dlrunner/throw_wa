@@ -1,6 +1,3 @@
-// background.js
-
-// 사이드 패널 온/오프
 chrome.action.onClicked.addListener((tab) => {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
   chrome.sidePanel.open();
@@ -25,7 +22,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
       console.log("Tab URL: ", url);
 
       // 크롤링 API 호출
-      fetch(`${import.meta.env.VITE_API_URL}/api/url`, {
+      fetch(`http://ec2-3-36-89-153.ap-northeast-2.compute.amazonaws.com:8080/api/url`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
