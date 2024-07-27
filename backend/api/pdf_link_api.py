@@ -3,11 +3,11 @@ import os
 from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel
 import PyPDF2
+import platform
+import httpx
 from database.database_config import DatabaseConfig
 from database.vector_db import VectorDatabase
 from models.embedding import embed_text
-import httpx
-import platform
 from models.summary_text import generate_summary
 from models.keyword_text import keyword_extraction
 from models.title_generate import generate_title
@@ -76,16 +76,17 @@ async def extract_text_from_local_pdf(pdf_url: str) -> str:
     decoded_path = urllib.parse.unquote(pdf_url)
     
     # 파일 프로토콜 제거
-    if platform.system() == "Windows":
-        if decoded_path.startswith("file:///"):
+    if decoded_path.startswith("file:///"):
+        if platform.system() == "Windows":
             decoded_path = decoded_path[8:]
-    elif platform.system() == "Darwin":  # macOS
-        if decoded_path.startswith("file://"):
+        elif platform.system() == "Darwin":  # macOS
             decoded_path = decoded_path[7:]
+    else:
+        raise ValueError(f"Invalid file URL: {decoded_path}")
 
     # 도커 컨테이너 내부 경로로 변경
     container_path_prefix = "/host"
-    decoded_path = os.path.join(container_path_prefix, decoded_path.lstrip('/'))
+    decoded_path = os.path.join(container_path_prefix, decoded_path.replace("C:/", "C:/").replace("C:\\", "C:/").replace("\\", "/"))
 
     if not os.path.exists(decoded_path):
         raise FileNotFoundError(f"File not found: {decoded_path}")
@@ -150,7 +151,7 @@ async def extract_remote_pdf(pdf_url: PDFUrl):
         return {
             "success": True,
             "text": extracted_text,
-            "요약": summary_text,
+            "summary": summary_text,
             "title": show_title,
             "keyword": keyword,
             "embedding": embedding,
