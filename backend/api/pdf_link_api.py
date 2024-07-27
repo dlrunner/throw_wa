@@ -74,7 +74,6 @@ async def download_pdf(pdf_url):
 async def extract_text_from_local_pdf(pdf_url: str) -> str:
     # URL 디코딩
     decoded_path = urllib.parse.unquote(pdf_url)
-    print(decoded_path)
     
     # 파일 프로토콜 제거
     if platform.system() == "Windows":
@@ -84,13 +83,12 @@ async def extract_text_from_local_pdf(pdf_url: str) -> str:
         if decoded_path.startswith("file://"):
             decoded_path = decoded_path[7:]
 
-    
     # 도커 컨테이너 내부 경로로 변경
-    container_path_prefix = "/app/pdf"
-    decoded_path = os.path.join(container_path_prefix, os.path.basename(decoded_path))
-    
+    container_path_prefix = "/host"
+    decoded_path = os.path.join(container_path_prefix, decoded_path.lstrip('/'))
+
     if not os.path.exists(decoded_path):
-        raise FileNotFoundError(f"파일을 찾을 수 없습니다.: {decoded_path}")
+        raise FileNotFoundError(f"File not found: {decoded_path}")
     
     with open(decoded_path, 'rb') as file:
         reader = PyPDF2.PdfReader(file)
