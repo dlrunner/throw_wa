@@ -90,12 +90,6 @@ async def upload_pdf(file: UploadFile = File(...)):
             spring_response = await client.post(spring_url, json=payload)
             spring_response.raise_for_status()
             logger.info(f"Spring Boot 서버로의 연결이 성공하였습니다. 응답 코드: {spring_response.status_code}")
-        except httpx.HTTPStatusError as e:
-            logger.error(f"Spring Boot 서버 연결 오류: {e.response.status_code} - {e.response.text}")
-            raise HTTPException(status_code=500, detail="스프링 서버와 연결할 수 없습니다.")
-        except httpx.RequestError as e:
-            logger.error(f"HTTP 요청 오류 발생: {e}")
-            raise HTTPException(status_code=500, detail=f"HTTP 요청 오류: {str(e)}")
         except AttributeError as e:
             logger.error(f"Spring Boot 서버 연결 중 응답 오류: {e}")
             raise HTTPException(status_code=500, detail=f"Spring Boot 서버 연결 중 응답 오류: {str(e)}")
@@ -147,12 +141,6 @@ async def upload_pdf_to_s3(file_path: str, file_name: str):
         # Spring Boot에서 반환한 JSON 응답을 파싱
         result = response.json()
         return result
-    except httpx.HTTPStatusError as e:
-        logger.error(f"HTTP 상태 오류 발생: {e.response.status_code} - {e.response.text}")
-        raise HTTPException(status_code=500, detail=f"HTTP 상태 오류: {e.response.status_code}")
-    except httpx.RequestError as e:
-        logger.error(f"HTTP 요청 오류 발생: {e}")
-        raise HTTPException(status_code=500, detail=f"HTTP 요청 오류: {str(e)}")
     except Exception as e:
         logger.error(f"오류 발생: {e}")
         raise HTTPException(status_code=500, detail=f"오류: {str(e)}")
