@@ -14,6 +14,7 @@ const NavBar = () => {
   const [url, setUrl] = useState('');
   const [heading, setHeading] = useState('Throw-wa Service');
   const [fade, setFade] = useState(false);
+  const [file, setFile] = useState(null);
 
   useEffect(() => {
     const headings = ['Throw-wa Service', '회원님들의 시간은 소중하니까..', '생각나는 키워드를 입력해보세요!'];
@@ -115,6 +116,55 @@ const NavBar = () => {
     }
   };
 
+  const handleFileUpload = async () => {
+    if (!file) {
+      setResult('파일을 선택해 주세요.');
+      setTimeout(() => setResult(''), 3000);
+      return;
+    }
+
+    setIsLoading(true);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    getToken(async function (token) {
+      if (token) {
+        console.log('Token retrieved:', token);
+        try {
+          formData.append('token', token);
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/FileUpload`, {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const text = await response.text();
+            throw new Error('오류발생: ' + text);
+          }
+
+          const data = await response.json();
+          if (data.success) {
+            setResult('파일이 성공적으로 업로드되었습니다!');
+          } else {
+            throw new Error(data.message || '처리 실패');
+          }
+        } catch (error) {
+          setResult('오류 발생: ' + error.message);
+        } finally {
+          setIsLoading(false);
+          setFile(null); // 파일 선택 초기화
+          setTimeout(() => setResult(''), 3000); // 3초 후에 result 메시지 지우기
+        }
+      } else {
+        console.log('No token found');
+        setIsLoading(false);
+        setResult('토큰을 찾을 수 없습니다.');
+        setTimeout(() => setResult(''), 3000); // 3초 후에 result 메시지 지우기
+      }
+    });
+  };
+
   return (
     <div className="nav-bar-container">
       <MetamaskLogo />
@@ -153,6 +203,17 @@ const NavBar = () => {
             현재 탭 마킹
           </button>
         )}
+        <div className="file-upload-container">
+          <input
+            type="file"
+            accept="application/pdf"
+            onChange={(e) => setFile(e.target.files[0])}
+            className="file-input"
+          />
+          <button className="nav-button" onClick={handleFileUpload} disabled={isLoading}>
+            PDF 업로드
+          </button>
+        </div>
         <div className="result-div" id="result">{result}</div>
       </div>
       <div className="chat-box-container">

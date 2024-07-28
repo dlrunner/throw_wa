@@ -1,8 +1,9 @@
 import os
+import base64
 import shutil
 import PyPDF2
 import httpx
-from fastapi import FastAPI, File, UploadFile, HTTPException, APIRouter, Form
+from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel
 from database.database_config import DatabaseConfig
 from models.embedding import embed_text
@@ -32,6 +33,13 @@ app = FastAPI()
 
 # HTTP 클라이언트 세션 생성
 client = httpx.AsyncClient(timeout=10.0)
+
+class PDFRequest(BaseModel):
+    file: str
+    date: str
+    userId: str
+    userName: str
+    fileName: str
 
 async def extract_text_from_local_pdf(file_path: str) -> str:
     try:
@@ -63,15 +71,13 @@ async def upload_pdf_to_s3(file_path: str, file_name: str):
         raise HTTPException(status_code=500, detail=f"오류: {str(e)}")
 
 @router.post("/upload_pdf")
-async def upload_pdf(file: UploadFile = File(...), userId: str = Form(...), userName: str = Form(...), date: str = Form(...)):
+async def upload_pdf(request: PDFRequest):
     try:
-        # 임시 파일 경로 설정
-        temp_file_path = f"/tmp/{file.filename}"
-
-        # 파일 저장
+        # 파일 디코딩 및 임시 파일 저장
+        temp_file_path = f"/tmp/{request.fileName}"
         with open(temp_file_path, "wb") as temp_file:
-            shutil.copyfileobj(file.file, temp_file)
-        
+            temp_file.write(base64.b64decode(request.file))
+
         # PDF 텍스트 추출
         extracted_text = await extract_text_from_local_pdf(temp_file_path)
 
@@ -79,7 +85,7 @@ async def upload_pdf(file: UploadFile = File(...), userId: str = Form(...), user
         local_file_path = f"file://{os.path.abspath(temp_file_path)}"
 
         # 데이터베이스에 저장
-        id = db.insert_pdf(file.filename, extracted_text)
+        id = db.insert_pdf(request.fileName, extracted_text)
         embedding = embed_text(extracted_text)
         summary_text = await generate_summary(extracted_text)
         keyword = await keyword_extraction(summary_text)
@@ -87,7 +93,7 @@ async def upload_pdf(file: UploadFile = File(...), userId: str = Form(...), user
 
         # PDF 파일을 S3로 업로드
         try:
-            s3_info = await upload_pdf_to_s3(temp_file_path, file.filename)
+            s3_info = await upload_pdf_to_s3(temp_file_path, request.fileName)
         except Exception as e:
             logger.error(f"PDF 업로드 중 오류 발생: {e}")
             raise HTTPException(status_code=500, detail=f"PDF 업로드 중 오류 발생: {e}")
@@ -98,15 +104,15 @@ async def upload_pdf(file: UploadFile = File(...), userId: str = Form(...), user
             "embedding": embedding,
             "link": local_file_path,
             "type": "PDF",
-            "date": date,
+            "date": request.date,
             "summary": str(summary_text),
             "keyword": str(keyword),
             "title": str(show_title),
             "s3OriginalFilename": str(s3_info['originalFilename']),
             "s3Key": str(s3_info['key']),
             "s3Url": str(s3_info['url']),
-            "userId": userId,
-            "userName": userName
+            "userId": request.userId,
+            "userName": request.userName
         }
 
         spring_url = f"{spring_api_url}/api/embeddingS3"
@@ -129,8 +135,8 @@ async def upload_pdf(file: UploadFile = File(...), userId: str = Form(...), user
             "s3OriginalFilename": str(s3_info['originalFilename']),
             "s3Key": str(s3_info['key']),
             "s3Url": str(s3_info['url']),
-            "userId": userId,
-            "userName": userName
+            "userId": request.userId,
+            "userName": request.userName
         }
     except Exception as e:
         logger.error(f"Unhandled error: {e}")
@@ -140,3 +146,4 @@ async def upload_pdf(file: UploadFile = File(...), userId: str = Form(...), user
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
             logger.info(f"임시 PDF 파일 삭제: {temp_file_path}")
+
