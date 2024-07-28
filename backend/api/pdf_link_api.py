@@ -40,7 +40,7 @@ class PDFUrl(BaseModel):
     userId: str
     userName: str
 
-@app.post("/upload_pdf/")
+@router.post("/upload_pdf")
 async def upload_pdf(file: UploadFile = File(...)):
     try:
         # 임시 파일 경로 설정
