@@ -1,8 +1,8 @@
 import os
-import urllib.parse
+import shutil
 import PyPDF2
 import httpx
-from fastapi import FastAPI, HTTPException, APIRouter
+from fastapi import FastAPI, File, UploadFile, HTTPException, APIRouter
 from pydantic import BaseModel
 from database.database_config import DatabaseConfig
 from models.embedding import embed_text
@@ -11,7 +11,6 @@ from models.keyword_text import keyword_extraction
 from models.title_generate import generate_title
 from dotenv import load_dotenv
 import logging
-import platform
 
 router = APIRouter()
 
@@ -29,6 +28,8 @@ spring_api_url = os.getenv("SPRING_API_URL")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+app = FastAPI()
+
 # HTTP 클라이언트 세션 생성
 client = httpx.AsyncClient(timeout=10.0)
 
@@ -39,86 +40,21 @@ class PDFUrl(BaseModel):
     userId: str
     userName: str
 
-async def download_pdf(pdf_url):
+@app.post("/upload_pdf/")
+async def upload_pdf(file: UploadFile = File(...)):
     try:
-        real_pdf_url = pdf_url.replace('%20', ' ')
-        file_name = real_pdf_url.split('/')[-1]
+        # 임시 파일 경로 설정
+        temp_file_path = f"/tmp/{file.filename}"
 
-        logger.info(f"Downloading PDF from URL: {real_pdf_url}")
-        # HTTP를 통해 PDF 파일 다운로드
-        response = await client.get(real_pdf_url)
-        response.raise_for_status()
-        file_content = response.content
-
-        # 파일 내용을 Spring Boot로 전송
-        files = {'file': (file_name, file_content)}
-        logger.info(f"Uploading PDF to Spring Boot: {spring_api_url}/api/upload")
-        response = await client.post(f"{spring_api_url}/api/upload", files=files)
-        response.raise_for_status()
-
-        # Spring Boot에서 반환한 JSON 응답을 파싱
-        result = response.json()
-        return result
-    except httpx.HTTPStatusError as e:
-        logger.error(f"HTTP 상태 오류 발생: {e.response.status_code} - {e.response.text}")
-        raise HTTPException(status_code=500, detail=f"HTTP 상태 오류: {e.response.status_code}")
-    except httpx.RequestError as e:
-        logger.error(f"HTTP 요청 오류 발생: {e}")
-        raise HTTPException(status_code=500, detail=f"HTTP 요청 오류: {str(e)}")
-    except Exception as e:
-        logger.error(f"오류 발생: {e}")
-        raise HTTPException(status_code=500, detail=f"오류: {str(e)}")
-
-async def extract_text_from_local_pdf(file_path: str) -> str:
-    try:
-        with open(file_path, 'rb') as file:
-            reader = PyPDF2.PdfReader(file)
-            text = ""
-            for page in reader.pages:
-                text += page.extract_text()
-        return text
-    except Exception as e:
-        logger.error(f"파일에서 텍스트 추출 중 오류 발생: {e}")
-        raise HTTPException(status_code=500, detail=f"파일에서 텍스트 추출 중 오류 발생: {str(e)}")
-    finally:
-        # 파일 삭제
-        if os.path.exists(file_path):
-            os.remove(file_path)
-            logger.info(f"다운로드한 PDF 파일 삭제: {file_path}")
-
-@router.post("/pdf_text")
-async def extract_remote_pdf(pdf_url: PDFUrl):
-    try:
-        logger.info(f"Received request: {pdf_url}")
+        # 파일 저장
+        with open(temp_file_path, "wb") as temp_file:
+            shutil.copyfileobj(file.file, temp_file)
         
-        file_name = pdf_url.url.split('/')[-1]
-        file_path = f"/tmp/{file_name}"
+        # PDF 텍스트 추출
+        extracted_text = await extract_text_from_local_pdf(temp_file_path)
 
-        if pdf_url.url.startswith("file://"):
-            # 로컬 파일 경로 처리
-            decoded_path = urllib.parse.unquote(pdf_url.url)
-            if platform.system() == "Windows":
-                decoded_path = decoded_path[8:]  # 'file:///' 제거
-            elif platform.system() == "Darwin":  # macOS
-                decoded_path = decoded_path[7:]  # 'file://' 제거
-            
-            decoded_path = decoded_path.replace("/", os.path.sep)
-            if not os.path.exists(decoded_path):
-                raise HTTPException(status_code=404, detail="로컬 파일을 찾을 수 없습니다.")
-            file_path = decoded_path
-        else:
-            # 원격 파일 다운로드
-            async with client.stream("GET", pdf_url.url) as response:
-                response.raise_for_status()
-                with open(file_path, "wb") as file:
-                    async for chunk in response.aiter_bytes():
-                        file.write(chunk)
-        
-        # 텍스트 추출
-        extracted_text = await extract_text_from_local_pdf(file_path)
-        
         # 데이터베이스에 저장
-        id = db.insert_pdf(pdf_url.url, extracted_text)
+        id = db.insert_pdf(file.filename, extracted_text)
         embedding = embed_text(extracted_text)
         summary_text = await generate_summary(extracted_text)
         keyword = await keyword_extraction(summary_text)
@@ -126,26 +62,26 @@ async def extract_remote_pdf(pdf_url: PDFUrl):
 
         # PDF 파일을 S3로 업로드
         try:
-            s3_info = await download_pdf(pdf_url.url)
+            s3_info = await upload_pdf_to_s3(temp_file_path, file.filename)
         except Exception as e:
-            logger.error(f"PDF 다운로드 중 오류 발생: {e}")
-            raise HTTPException(status_code=500, detail=f"PDF 다운로드 중 오류 발생: {e}")
+            logger.error(f"PDF 업로드 중 오류 발생: {e}")
+            raise HTTPException(status_code=500, detail=f"PDF 업로드 중 오류 발생: {e}")
 
         # Spring Boot 서버로 데이터 전송
         payload = {
             "id": str(id),
             "embedding": embedding,
-            "link": pdf_url.url,
-            "type": pdf_url.type,
-            "date": pdf_url.date,
+            "link": s3_info['url'],
+            "type": "PDF",
+            "date": "",
             "summary": str(summary_text),
             "keyword": str(keyword),
             "title": str(show_title),
             "s3OriginalFilename": str(s3_info['originalFilename']),
             "s3Key": str(s3_info['key']),
             "s3Url": str(s3_info['url']),
-            "userId": pdf_url.userId,
-            "userName": pdf_url.userName
+            "userId": "",
+            "userName": ""
         }
 
         spring_url = f"{spring_api_url}/api/embeddingS3"
@@ -174,18 +110,51 @@ async def extract_remote_pdf(pdf_url: PDFUrl):
             "s3OriginalFilename": str(s3_info['originalFilename']),
             "s3Key": str(s3_info['key']),
             "s3Url": str(s3_info['url']),
-            "userId": pdf_url.userId,
-            "userName": pdf_url.userName
+            "userId": "",
+            "userName": ""
         }
-    except httpx.HTTPStatusError as e:
-        logger.error(f"HTTP 상태 오류 발생: {e.response.status_code} - {e.response.text}")
-        raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
-    except httpx.RequestError as e:
-        logger.error(f"HTTP 요청 오류 발생: {e}")
-        raise HTTPException(status_code=500, detail=f"HTTP 요청 오류: {str(e)}")
-    except FileNotFoundError as e:
-        logger.error(f"File not found: {e}")
-        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Unhandled error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        # 임시 파일 삭제
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+            logger.info(f"임시 PDF 파일 삭제: {temp_file_path}")
+
+async def extract_text_from_local_pdf(file_path: str) -> str:
+    try:
+        with open(file_path, 'rb') as file:
+            reader = PyPDF2.PdfReader(file)
+            text = ""
+            for page in reader.pages:
+                text += page.extract_text()
+        return text
+    except Exception as e:
+        logger.error(f"파일에서 텍스트 추출 중 오류 발생: {e}")
+        raise HTTPException(status_code=500, detail=f"파일에서 텍스트 추출 중 오류 발생: {str(e)}")
+
+async def upload_pdf_to_s3(file_path: str, file_name: str):
+    try:
+        with open(file_path, "rb") as file:
+            file_content = file.read()
+
+        files = {'file': (file_name, file_content)}
+        logger.info(f"Uploading PDF to Spring Boot: {spring_api_url}/api/upload")
+        response = await client.post(f"{spring_api_url}/api/upload", files=files)
+        response.raise_for_status()
+
+        # Spring Boot에서 반환한 JSON 응답을 파싱
+        result = response.json()
+        return result
+    except httpx.HTTPStatusError as e:
+        logger.error(f"HTTP 상태 오류 발생: {e.response.status_code} - {e.response.text}")
+        raise HTTPException(status_code=500, detail=f"HTTP 상태 오류: {e.response.status_code}")
+    except httpx.RequestError as e:
+        logger.error(f"HTTP 요청 오류 발생: {e}")
+        raise HTTPException(status_code=500, detail=f"HTTP 요청 오류: {str(e)}")
+    except Exception as e:
+        logger.error(f"오류 발생: {e}")
+        raise HTTPException(status_code=500, detail=f"오류: {str(e)}")
+
+app.include_router(router)
