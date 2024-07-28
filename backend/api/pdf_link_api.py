@@ -1,5 +1,4 @@
 import os
-import platform
 import urllib.parse
 import PyPDF2
 import httpx
@@ -10,9 +9,9 @@ from models.embedding import embed_text
 from models.summary_text import generate_summary
 from models.keyword_text import keyword_extraction
 from models.title_generate import generate_title
-from io import BytesIO
 from dotenv import load_dotenv
 import logging
+import platform
 
 router = APIRouter()
 
@@ -92,15 +91,28 @@ async def extract_remote_pdf(pdf_url: PDFUrl):
     try:
         logger.info(f"Received request: {pdf_url}")
         
-        # PDF 파일 다운로드
         file_name = pdf_url.url.split('/')[-1]
         file_path = f"/tmp/{file_name}"
-        
-        async with client.stream("GET", pdf_url.url) as response:
-            response.raise_for_status()
-            with open(file_path, "wb") as file:
-                async for chunk in response.aiter_bytes():
-                    file.write(chunk)
+
+        if pdf_url.url.startswith("file://"):
+            # 로컬 파일 경로 처리
+            decoded_path = urllib.parse.unquote(pdf_url.url)
+            if platform.system() == "Windows":
+                decoded_path = decoded_path[8:]  # 'file:///' 제거
+            elif platform.system() == "Darwin":  # macOS
+                decoded_path = decoded_path[7:]  # 'file://' 제거
+            
+            decoded_path = decoded_path.replace("/", os.path.sep)
+            if not os.path.exists(decoded_path):
+                raise HTTPException(status_code=404, detail="로컬 파일을 찾을 수 없습니다.")
+            file_path = decoded_path
+        else:
+            # 원격 파일 다운로드
+            async with client.stream("GET", pdf_url.url) as response:
+                response.raise_for_status()
+                with open(file_path, "wb") as file:
+                    async for chunk in response.aiter_bytes():
+                        file.write(chunk)
         
         # 텍스트 추출
         extracted_text = await extract_text_from_local_pdf(file_path)
@@ -165,6 +177,12 @@ async def extract_remote_pdf(pdf_url: PDFUrl):
             "userId": pdf_url.userId,
             "userName": pdf_url.userName
         }
+    except httpx.HTTPStatusError as e:
+        logger.error(f"HTTP 상태 오류 발생: {e.response.status_code} - {e.response.text}")
+        raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
+    except httpx.RequestError as e:
+        logger.error(f"HTTP 요청 오류 발생: {e}")
+        raise HTTPException(status_code=500, detail=f"HTTP 요청 오류: {str(e)}")
     except FileNotFoundError as e:
         logger.error(f"File not found: {e}")
         raise HTTPException(status_code=404, detail=str(e))
