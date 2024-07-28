@@ -2,7 +2,7 @@ import os
 import shutil
 import PyPDF2
 import httpx
-from fastapi import FastAPI, File, UploadFile, HTTPException, APIRouter, Form
+from fastapi import FastAPI, File, UploadFile, HTTPException, APIRouter
 from pydantic import BaseModel
 from database.database_config import DatabaseConfig
 from models.embedding import embed_text
@@ -33,41 +33,15 @@ app = FastAPI()
 # HTTP 클라이언트 세션 생성
 client = httpx.AsyncClient(timeout=10.0)
 
-async def extract_text_from_local_pdf(file_path: str) -> str:
-    try:
-        with open(file_path, 'rb') as file:
-            reader = PyPDF2.PdfReader(file)
-            text = ""
-            for page in reader.pages:
-                text += page.extract_text()
-        return text
-    except Exception as e:
-        logger.error(f"파일에서 텍스트 추출 중 오류 발생: {e}")
-        raise HTTPException(status_code=500, detail=f"파일에서 텍스트 추출 중 오류 발생: {str(e)}")
-
-async def upload_pdf_to_s3(file_path: str, file_name: str):
-    try:
-        with open(file_path, "rb") as file:
-            file_content = file.read()
-
-        files = {'file': (file_name, file_content)}
-        logger.info(f"Uploading PDF to Spring Boot: {spring_api_url}/api/upload")
-        response = await client.post(f"{spring_api_url}/api/upload", files=files)
-        response.raise_for_status()
-
-        # Spring Boot에서 반환한 JSON 응답을 파싱
-        result = response.json()
-        return result
-    except Exception as e:
-        logger.error(f"오류 발생: {e}")
-        raise HTTPException(status_code=500, detail=f"오류: {str(e)}")
-
+class PDFUrl(BaseModel):
+    url: str
+    type: str = "PDF"
+    date: str
+    userId: str
+    userName: str
 
 @router.post("/upload_pdf")
-async def upload_pdf(file: UploadFile = File(...),
-                     userId: str = Form(...),
-                     userName: str = Form(...),
-                     date: str = Form(...)):
+async def upload_pdf(file: UploadFile = File(...)):
     try:
         # 임시 파일 경로 설정
         temp_file_path = f"/tmp/{file.filename}"
@@ -102,15 +76,15 @@ async def upload_pdf(file: UploadFile = File(...),
             "embedding": embedding,
             "link": local_file_path,
             "type": "PDF",
-            "date": date,
+            "date": "",
             "summary": str(summary_text),
             "keyword": str(keyword),
             "title": str(show_title),
             "s3OriginalFilename": str(s3_info['originalFilename']),
             "s3Key": str(s3_info['key']),
             "s3Url": str(s3_info['url']),
-            "userId": userId,
-            "userName": userName
+            "userId": "",
+            "userName": ""
         }
 
         spring_url = f"{spring_api_url}/api/embeddingS3"
@@ -133,8 +107,8 @@ async def upload_pdf(file: UploadFile = File(...),
             "s3OriginalFilename": str(s3_info['originalFilename']),
             "s3Key": str(s3_info['key']),
             "s3Url": str(s3_info['url']),
-            "userId": userId,
-            "userName": userName
+            "userId": "",
+            "userName": ""
         }
     except Exception as e:
         logger.error(f"Unhandled error: {e}")
@@ -145,3 +119,33 @@ async def upload_pdf(file: UploadFile = File(...),
             os.remove(temp_file_path)
             logger.info(f"임시 PDF 파일 삭제: {temp_file_path}")
 
+async def extract_text_from_local_pdf(file_path: str) -> str:
+    try:
+        with open(file_path, 'rb') as file:
+            reader = PyPDF2.PdfReader(file)
+            text = ""
+            for page in reader.pages:
+                text += page.extract_text()
+        return text
+    except Exception as e:
+        logger.error(f"파일에서 텍스트 추출 중 오류 발생: {e}")
+        raise HTTPException(status_code=500, detail=f"파일에서 텍스트 추출 중 오류 발생: {str(e)}")
+
+async def upload_pdf_to_s3(file_path: str, file_name: str):
+    try:
+        with open(file_path, "rb") as file:
+            file_content = file.read()
+
+        files = {'file': (file_name, file_content)}
+        logger.info(f"Uploading PDF to Spring Boot: {spring_api_url}/api/upload")
+        response = await client.post(f"{spring_api_url}/api/upload", files=files)
+        response.raise_for_status()
+
+        # Spring Boot에서 반환한 JSON 응답을 파싱
+        result = response.json()
+        return result
+    except Exception as e:
+        logger.error(f"오류 발생: {e}")
+        raise HTTPException(status_code=500, detail=f"오류: {str(e)}")
+
+app.include_router(router)
