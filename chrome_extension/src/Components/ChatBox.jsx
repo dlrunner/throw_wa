@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './ChatBox.css';
 import { FaSearch } from 'react-icons/fa'; // Font Awesome Search Icon yarn add react-icons
-import {ClockLoader} from 'react-spinners'
+import { ClockLoader } from 'react-spinners';
 
 const ChatBox = () => {
   const [messages, setMessages] = useState([]);
@@ -122,7 +122,7 @@ const ChatBox = () => {
           </button>
         </div>
       </div>
-      {loading && <div className='clock-loader-container'><ClockLoader color="#7289da"size={100}/></div>}
+      {loading && <div className='clock-loader-container'><ClockLoader color="#7289da" size={100} /></div>}
       {error && <div className="error-message">{error}</div>}
       <div className="chat-messages">
         {messages.map((msg, index) => (
@@ -132,13 +132,14 @@ const ChatBox = () => {
                 <span style={{ fontSize: 'larger' }}>
                   [{msg.type}]
                 </span>
-                <a href={msg.link} target='_blank' rel='noopener noreferrer' title={msg.link} style={{ color: "#9bfe63" }}>
-                  {truncateLink(msg.title)}
-                </a>
-                {msg.s3OriginalFilename && msg.s3Key && msg.s3Url && (
-                  <button onClick={() => s3DownloadBtn(msg.s3OriginalFilename, msg.s3Key, msg.s3Url)}>
-                    다운로드
+                {msg.type === 'PDF' ? (
+                  <button onClick={() => s3DownloadBtn(msg.s3OriginalFilename, msg.s3Key, msg.s3Url)} style={{ color: "#9bfe63", background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline' }}>
+                    {truncateLink(msg.title)}
                   </button>
+                ) : (
+                  <a href={msg.link} target='_blank' rel='noopener noreferrer' title={msg.link} style={{ color: "#9bfe63" }}>
+                    {truncateLink(msg.title)}
+                  </a>
                 )}
                 <div className='message-summary'>{msg.summary}</div>
               </>

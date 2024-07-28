@@ -15,6 +15,7 @@ const NavBar = () => {
   const [heading, setHeading] = useState('Throw-wa Service');
   const [fade, setFade] = useState(false);
   const [file, setFile] = useState(null);
+  const [isPdfUploadMode, setIsPdfUploadMode] = useState(false);
 
   useEffect(() => {
     const headings = ['Throw-wa Service', '회원님들의 시간은 소중하니까..', '생각나는 키워드를 입력해보세요!'];
@@ -116,14 +117,12 @@ const NavBar = () => {
     }
   };
 
-  const handleFileUpload = async () => {
-    if (!file) {
-      setResult('파일을 선택해 주세요.');
-      setTimeout(() => setResult(''), 3000);
-      return;
-    }
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
 
     setIsLoading(true);
+    setResult(''); // 결과 초기화
 
     const formData = new FormData();
     formData.append('file', file);
@@ -170,52 +169,60 @@ const NavBar = () => {
       <MetamaskLogo />
       <h2 className={`fade ${fade ? 'out' : 'in'}`}>{heading}</h2>
       <div className="nav-bar-actions">
-        <button className="fas-button" onClick={() => setShowUrlInput(!showUrlInput)}>
-          <i className="fas fa-sync-alt"></i> {/* 전환 아이콘 추가 */}
-        </button>
+        {!isPdfUploadMode && (
+          <button className="fas-button" onClick={() => setShowUrlInput(!showUrlInput)}>
+            <i className="fas fa-sync-alt"></i> {/* 전환 아이콘 추가 */}
+          </button>
+        )}
         {isLoading ? (
           <div className='clock-loader-container-narvar'><BeatLoader color="#7289da" size={20} /></div>
         ) : (
           <>
-            <CSSTransition
-              in={showUrlInput}
-              timeout={600}  // 애니메이션 시간을 600ms로 설정
-              classNames="url-input"
-              unmountOnExit
-            >
-              <input
-                type="text"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="URL 입력"
-                className="url-input"
-              />
-            </CSSTransition>
-            {showUrlInput && (
+            {!isPdfUploadMode && (
+              <CSSTransition
+                in={showUrlInput}
+                timeout={600}  // 애니메이션 시간을 600ms로 설정
+                classNames="url-input"
+                unmountOnExit
+              >
+                <input
+                  type="text"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="URL 입력"
+                  className="url-input"
+                />
+              </CSSTransition>
+            )}
+            {showUrlInput && !isPdfUploadMode && (
               <button className="nav-button" onClick={handleUrlSave} disabled={isLoading}>
                 마킹
               </button>
             )}
+            {!showUrlInput && !isLoading && !isPdfUploadMode && (
+              <button className="nav-button" onClick={handleButtonClick} disabled={isLoading}>
+                현재 탭 마킹
+              </button>
+            )}
+            {!showUrlInput && !isLoading && (
+              <div className="file-upload-container">
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handleFileUpload}
+                  className="file-input"
+                  style={{ display: 'none' }}
+                  id="fileUpload"
+                />
+                <label htmlFor="fileUpload" className="nav-button">
+                  PDF 업로드
+                </label>
+              </div>
+            )}
           </>
         )}
-        {!showUrlInput && !isLoading && (
-          <button className="nav-button" onClick={handleButtonClick} disabled={isLoading}>
-            현재 탭 마킹
-          </button>
-        )}
-        <div className="file-upload-container">
-          <input
-            type="file"
-            accept="application/pdf"
-            onChange={(e) => setFile(e.target.files[0])}
-            className="file-input"
-          />
-          <button className="nav-button" onClick={handleFileUpload} disabled={isLoading}>
-            PDF 업로드
-          </button>
-        </div>
-        <div className="result-div" id="result">{result}</div>
       </div>
+      <div className="result-div" id="result">{result}</div>
       <div className="chat-box-container">
         <ChatBox />
       </div>
