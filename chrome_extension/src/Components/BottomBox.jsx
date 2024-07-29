@@ -4,7 +4,7 @@ import { Line, Pie } from 'react-chartjs-2';
 import 'chart.js/auto';
 import { BeatLoader } from 'react-spinners';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
-// yarn add react-transition-group 차트 슬라이드 효과
+
 const BottomBox = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -14,7 +14,7 @@ const BottomBox = () => {
   const [visibleLinks, setVisibleLinks] = useState({});
   const [keywordLinks, setKeywordLinks] = useState({});
   const [visibleChart, setVisibleChart] = useState(false);
-  const username =  localStorage.getItem("username")
+  const username = localStorage.getItem("username");
 
   const handleClick = async () => {
     if (visibleChart) {
@@ -40,9 +40,6 @@ const BottomBox = () => {
           if (!responseToken.ok) {
             throw new Error('Token validation failed');
           }
-
-          console.log("responseToken");
-          console.log(responseToken);
 
           const tokenData = await responseToken.json(); // 응답을 JSON으로 파싱
           const { email } = tokenData;  // 구조 분해 할당으로 email 추출
@@ -184,11 +181,6 @@ const BottomBox = () => {
     return `${text.substring(0, maxLength)}...`;
   };
 
-  // const getTokenChrome = (callback) => {
-  //   chrome.storage.local.get(['jwtToken'], function (result) {
-  //     callback(result.jwtToken);
-  //   });
-  // };
   const getTokenLocal = (callback) => {
     if (typeof localStorage !== 'undefined') {
       const tokenData = JSON.parse(localStorage.getItem('jwtToken'));
@@ -209,66 +201,72 @@ const BottomBox = () => {
       <div className="button-container">
         <button onClick={handleClick} className="bottom-button">Throw Chart</button>
       </div>
-      {loading && <div className="beat-loader-container"><BeatLoader color="#7289da" /></div>}
+      {loading && (
+        <div className="beat-loader-container">
+          <BeatLoader color="#7289da" />
+        </div>
+      )}
       {error && <p>Error: {error}</p>}
-      <TransitionGroup>
-        {visibleChart && rankings.length > 0 && (
-          <CSSTransition key="rankings" timeout={300} classNames="chart">
-            <div className="rankings">
-              <h3>{username}님의 가장 많이 저장한 카테고리는 <strong style={{ color: '#7289da' }}>{bestKeyword.keyword}</strong>입니다</h3>
-              <Pie data={getPieChartData()} options={{ onClick: (e, elements) => handlePieChartClick(elements) }} />
-            </div>
-          </CSSTransition>
-        )}
-        {visibleChart && Object.keys(keywordLinks).map(keyword => (
-          <CSSTransition key={keyword} timeout={300} classNames="keyword-links">
-            <div className="keyword-links">
-              <h3>{keyword} 링크</h3>
-              <ul>
-                {keywordLinks[keyword].map((link, index) => (
-                  <li key={index}>
-                    <span style={{ fontSize: 'larger' }}>
-                      [{link.type}]
-                    </span>
-                    <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title} style={{ color: "#9bfe63" }}>
-                      {truncateLink(link.title)}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </CSSTransition>
-        ))}
-        {visibleChart && data && (
-          <CSSTransition key="chart" timeout={300} classNames="chart">
-            <div className="chart-container">
-              <Line data={getChartData()} options={{ onClick: (e, elements) => handleLineChartClick(elements) }} />
-              <TransitionGroup>
-                {Object.keys(visibleLinks).map(date => (
-                  visibleLinks[date] && (
-                    <CSSTransition key={date} timeout={300} classNames="bookmark-list">
-                      <div className="bookmark-list">
-                        <ul>
-                          {data.find(item => item.date === date).urls.map((link, index) => (
-                            <li key={index}>
-                              <span style={{ fontSize: 'larger' }}>
-                                [{link.type}]
-                              </span>
-                              <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title} style={{ color: "#9bfe63" }}>
-                                {truncateLink(link.title)}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </CSSTransition>
-                  )
-                ))}
-              </TransitionGroup>
-            </div>
-          </CSSTransition>
-        )}
-      </TransitionGroup>
+      {!loading && (
+        <TransitionGroup>
+          {visibleChart && rankings.length > 0 && (
+            <CSSTransition key="rankings" timeout={300} classNames="chart">
+              <div className="rankings">
+                <h3>{username}님의 가장 많이 저장한 카테고리는 <strong style={{ color: '#7289da' }}>{bestKeyword.keyword}</strong>입니다</h3>
+                <Pie data={getPieChartData()} options={{ onClick: (e, elements) => handlePieChartClick(elements) }} />
+              </div>
+            </CSSTransition>
+          )}
+          {visibleChart && Object.keys(keywordLinks).map(keyword => (
+            <CSSTransition key={keyword} timeout={300} classNames="keyword-links">
+              <div className="keyword-links">
+                <h3>{keyword} 링크</h3>
+                <ul>
+                  {keywordLinks[keyword].map((link, index) => (
+                    <li key={index}>
+                      <span style={{ fontSize: 'larger' }}>
+                        [{link.type}]
+                      </span>
+                      <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title} style={{ color: "#9bfe63" }}>
+                        {truncateLink(link.title)}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </CSSTransition>
+          ))}
+          {visibleChart && data && (
+            <CSSTransition key="chart" timeout={300} classNames="chart">
+              <div className="chart-container">
+                <Line data={getChartData()} options={{ onClick: (e, elements) => handleLineChartClick(elements) }} />
+                <TransitionGroup>
+                  {Object.keys(visibleLinks).map(date => (
+                    visibleLinks[date] && (
+                      <CSSTransition key={date} timeout={300} classNames="bookmark-list">
+                        <div className="bookmark-list">
+                          <ul>
+                            {data.find(item => item.date === date).urls.map((link, index) => (
+                              <li key={index}>
+                                <span style={{ fontSize: 'larger' }}>
+                                  [{link.type}]
+                                </span>
+                                <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title} style={{ color: "#9bfe63" }}>
+                                  {truncateLink(link.title)}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </CSSTransition>
+                    )
+                  ))}
+                </TransitionGroup>
+              </div>
+            </CSSTransition>
+          )}
+        </TransitionGroup>
+      )}
     </div>
   );
 };
