@@ -131,8 +131,13 @@ const ChatBox = () => {
   // };
   const getTokenLocal = (callback) => {
     if (typeof localStorage !== 'undefined') {
-      const tokenData = localStorage.getItem('jwtToken');
-      callback(tokenData.token);
+      const tokenData = JSON.parse(localStorage.getItem('jwtToken'));
+      if (tokenData && tokenData.token) {
+        callback(tokenData.token);
+      } else {
+        console.error('No token found');
+        callback(null);
+      }
     } else {
       console.error('localStorage is not available');
       callback(null);
