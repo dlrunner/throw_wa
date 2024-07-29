@@ -192,18 +192,7 @@ const BottomBox = () => {
   const getTokenLocal = (callback) => {
     if (typeof localStorage !== 'undefined') {
       const tokenData = localStorage.getItem('jwtToken');
-      if (tokenData) {
-        const currentTime = new Date().getTime();
-        if (currentTime < tokenData.expiryTime) {
-            callback(tokenData.token);
-        } else {
-            localStorage.removeItem('jwtToken');
-            callback(null);
-            console.log('Token has expired');
-        }
-    } else {
-        callback(null);
-    }
+      callback(tokenData.token);
     } else {
       console.error('localStorage is not available');
       callback(null);

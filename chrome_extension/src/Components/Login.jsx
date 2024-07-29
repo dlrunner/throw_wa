@@ -61,13 +61,10 @@ const LoginForm = () => {
       }
     )
       .then(response => {
-        const {token, username} =response.data;
-        saveToken(token);
-        localStorage.setItem('username', username)
         console.log("response:", response);
         saveTokenLocal(response.data.token);
 
-        navigate("/login");
+        navigate("/home");
       })
       .catch(error => {
         console.error("Error:", error);
