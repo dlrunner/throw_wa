@@ -81,11 +81,11 @@ def embed_text(text: str) -> list:
     
     embeddings = []
     for chunk in text_chunks:
-        inputs = tokenizer(chunk, return_tensors="pt", padding=True, truncation=True)
+        inputs = tokenizer(text_chunks, return_tensors="pt", padding=True, truncation=True)
         with torch.no_grad():
             outputs = text_model(**inputs)
             text_features = outputs.last_hidden_state.mean(dim=1)
-        embeddings.append(text_features.squeeze().cpu().numpy())
+        embeddings = (text_features.squeeze().cpu().numpy())
     
     # 모든 청크 임베딩의 평균을 계산
     mean_embedding = np.mean(embeddings, axis=0)
