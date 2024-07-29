@@ -23,10 +23,10 @@ const BottomBox = () => {
     setError(null);
 
     try {
-      getToken(async function (token) {
+      getTokenLocal(async function (token) {
         if (token) {
           console.log('Token retrieved:', token);
-          
+
           const responseToken = await fetch(`${import.meta.env.VITE_API_URL}/api/validated_search`, {
             method: 'POST',
             headers: {
@@ -62,23 +62,23 @@ const BottomBox = () => {
               body: JSON.stringify({ email: email }),
             })
           ]);
-    
+
           if (!recentWeekResponse.ok) {
             throw new Error('Failed to fetch recent week data');
           }
           if (!keywordRankingsResponse.ok) {
             throw new Error('Failed to fetch keyword rankings');
           }
-    
+
           const recentWeekData = await recentWeekResponse.json();
           const keywordRankingsData = await keywordRankingsResponse.json();
-    
+
           console.log('키워드 데이터 오는지 확인:', keywordRankingsData);
           console.log('날짜별 데이터 오는지 확인:', recentWeekData);
-    
+
           const aggregatedData = aggregateData(recentWeekData);
           setData(aggregatedData);
-    
+
           const bestRank = keywordRankingsData.rankings[0];
           setBestKeyword(bestRank);
           setRankings(keywordRankingsData.rankings);
@@ -182,10 +182,30 @@ const BottomBox = () => {
     return `${text.substring(0, maxLength)}...`;
   };
 
-  const getToken = (callback) => {
-    chrome.storage.local.get(['jwtToken'], function (result) {
-      callback(result.jwtToken);
-    });
+  // const getTokenChrome = (callback) => {
+  //   chrome.storage.local.get(['jwtToken'], function (result) {
+  //     callback(result.jwtToken);
+  //   });
+  // };
+  const getTokenLocal = (callback) => {
+    if (typeof localStorage !== 'undefined') {
+      const tokenData = localStorage.getItem('jwtToken');
+      if (tokenData) {
+        const currentTime = new Date().getTime();
+        if (currentTime < tokenData.expiryTime) {
+            callback(tokenData.token);
+        } else {
+            localStorage.removeItem('jwtToken');
+            callback(null);
+            console.log('Token has expired');
+        }
+    } else {
+        callback(null);
+    }
+    } else {
+      console.error('localStorage is not available');
+      callback(null);
+    }
   };
 
   return (
