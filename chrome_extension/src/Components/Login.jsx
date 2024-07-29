@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Form, FormControl } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
+import Cookies from 'js-cookie';
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -41,13 +42,25 @@ const LoginForm = () => {
     });
   };
 
-  const saveToken = (token) => {
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-      chrome.storage.local.set({ jwtToken: token }, function() {
-        console.log('Token is saved');
-      });
+  // const saveTokenChrome = (token) => {
+  //   if (typeof chrome !== 'undefined' && chrome.storage) {
+  //     chrome.storage.local.set({ jwtToken: token }, function () {
+  //       console.log('Token is saved');
+  //     });
+  //   } else {
+  //     console.error('chrome.storage is not available');
+  //   }
+  // };
+  const saveTokenLocal = (token) => {
+    const expiresIn = 24 * 3600; // 1일 = 24시간 * 3600초
+    const expiryTime = new Date().getTime() + expiresIn * 1000; // expiresIn은 초 단위
+    const tokenData = { token, expiryTime };
+    
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('jwtToken', JSON.stringify(tokenData));
+      console.log('Token is saved');
     } else {
-      console.error('chrome.storage is not available');
+      console.error('localStorage is not available');
     }
   };
 
@@ -67,7 +80,7 @@ const LoginForm = () => {
     )
       .then(response => {
         console.log("response:", response);
-        saveToken(response.data.token);
+        saveTokenLocal(response.data.token);
 
         navigate("/home");
       })
