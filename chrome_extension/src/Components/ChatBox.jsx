@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './ChatBox.css';
 import { FaSearch } from 'react-icons/fa'; // Font Awesome Search Icon yarn add react-icons
-import { ClockLoader } from 'react-spinners';
+import { ClockLoader } from 'react-spinners'
 
 const ChatBox = () => {
   const [messages, setMessages] = useState([]);
@@ -18,10 +18,10 @@ const ChatBox = () => {
     setMessages([]);
 
     try {
-      getToken(async function (token) {
+      getTokenLocal(async function (token) {
         if (token) {
           console.log('Token retrieved:', token);
-          
+
           const responseToken = await fetch(`${import.meta.env.VITE_API_URL}/api/validated_search`, {
             method: 'POST',
             headers: {
@@ -124,10 +124,30 @@ const ChatBox = () => {
     }
   };
 
-  const getToken = (callback) => {
-    chrome.storage.local.get(['jwtToken'], function (result) {
-      callback(result.jwtToken);
-    });
+  // const getTokenChrome = (callback) => {
+  //   chrome.storage.local.get(['jwtToken'], function (result) {
+  //     callback(result.jwtToken);
+  //   });
+  // };
+  const getTokenLocal = (callback) => {
+    if (typeof localStorage !== 'undefined') {
+      const tokenData = localStorage.getItem('jwtToken');
+      if (tokenData) {
+        const currentTime = new Date().getTime();
+        if (currentTime < tokenData.expiryTime) {
+            callback(tokenData.token);
+        } else {
+            localStorage.removeItem('jwtToken');
+            callback(null);
+            console.log('Token has expired');
+        }
+    } else {
+        callback(null);
+    }
+    } else {
+      console.error('localStorage is not available');
+      callback(null);
+    }
   };
 
   return (

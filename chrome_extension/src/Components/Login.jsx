@@ -4,6 +4,7 @@ import { Form, FormControl, InputGroup } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaEnvelope, FaLock } from 'react-icons/fa';
 import './Login.css';
+import Cookies from 'js-cookie';
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -24,13 +25,25 @@ const LoginForm = () => {
     });
   };
 
-  const saveToken = (token) => {
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-      chrome.storage.local.set({ jwtToken: token }, function() {
-        console.log('Token is saved');
-      });
+  // const saveTokenChrome = (token) => {
+  //   if (typeof chrome !== 'undefined' && chrome.storage) {
+  //     chrome.storage.local.set({ jwtToken: token }, function () {
+  //       console.log('Token is saved');
+  //     });
+  //   } else {
+  //     console.error('chrome.storage is not available');
+  //   }
+  // };
+  const saveTokenLocal = (token) => {
+    const expiresIn = 24 * 3600; // 1일 = 24시간 * 3600초
+    const expiryTime = new Date().getTime() + expiresIn * 1000; // expiresIn은 초 단위
+    const tokenData = { token, expiryTime };
+    
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('jwtToken', JSON.stringify(tokenData));
+      console.log('Token is saved');
     } else {
-      console.error('chrome.storage is not available');
+      console.error('localStorage is not available');
     }
   };
 
@@ -51,7 +64,10 @@ const LoginForm = () => {
         const {token, username} =response.data;
         saveToken(token);
         localStorage.setItem('username', username)
-        navigate("/home");
+        console.log("response:", response);
+        saveTokenLocal(response.data.token);
+
+        navigate("/login");
       })
       .catch(error => {
         console.error("Error:", error);
