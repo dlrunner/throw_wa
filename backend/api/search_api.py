@@ -10,6 +10,7 @@ import os
 class QueryRequest(BaseModel):
     text: str
     top_k: int = 6
+    email: str
 
 router = APIRouter()
 
@@ -17,6 +18,9 @@ router = APIRouter()
 pc = pinecone.Pinecone(
     api_key= os.getenv("PINECONE_API_KEY")
 )
+
+# 환경 변수 사용
+spring_api_url = os.getenv("SPRING_API_URL")
 
 index_name = 'throw-wa'
 
@@ -28,11 +32,15 @@ async def search(request: QueryRequest):
     try:
         query_vector = embed_text(request.text) # 텍스트임베딩 호출
 
+        print(request.email)
         result = index.query(
             vector=query_vector,
-              top_k=request.top_k * 2,
-              include_metadata=True
-            )
+            filter={
+                "userId": {"$eq": request.email}
+            },
+            top_k=request.top_k * 2,
+            include_metadata=True
+        )
         
         unique_links =set()
         unique_matches = []
