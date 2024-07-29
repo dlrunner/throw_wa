@@ -31,38 +31,74 @@ const NavBar = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // const getTokenChrome = (callback) => {
+  //   chrome.storage.local.get(['jwtToken'], function (result) {
+  //     callback(result.jwtToken);
+  //   });
+  // };
+  const getTokenLocal = (callback) => {
+    if (typeof localStorage !== 'undefined') {
+      const tokenData = localStorage.getItem('jwtToken');
+      if (tokenData) {
+        const currentTime = new Date().getTime();
+        if (currentTime < tokenData.expiryTime) {
+            callback(tokenData.token);
+        } else {
+            localStorage.removeItem('jwtToken');
+            callback(null);
+            console.log('Token has expired');
+        }
+    } else {
+        callback(null);
+    }
+    } else {
+      console.error('localStorage is not available');
+      callback(null);
+    }
+  };
+
   const handleButtonClick = async () => {
     setIsLoading(true);
 
     chrome.tabs.query({ active: true, currentWindow: true }, async function (tabs) {
       const url = tabs[0].url;
 
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/url`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ url: url }),
-        });
+      getTokenLocal(async function (token) {
+        if (token) {
+          console.log('Token retrieved:', token);
+          try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/url`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ url: url, token: token }),
+            });
 
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error('오류발생' + text);
-        }
+            if (!response.ok) {
+              const text = await response.text();
+              throw new Error('오류발생' + text);
+            }
 
-        const data = await response.json();
-        if (data.success) {
-          setResult('throw-wa에 저장되었습니다!');
+            const data = await response.json();
+            if (data.success) {
+              setResult('throw-wa에 저장되었습니다!');
+            } else {
+              throw new Error(data.message || '처리 실패');
+            }
+          } catch (error) {
+            setResult('오류 발생: ' + error.message);
+          } finally {
+            setIsLoading(false);
+            setTimeout(() => setResult(''), 3000); // 3초 후에 result 메시지 지우기
+          }
         } else {
-          throw new Error(data.message || '처리 실패');
+          console.log('No token found');
+          setIsLoading(false);
+          setResult('토큰을 찾을 수 없습니다.');
+          setTimeout(() => setResult(''), 3000); // 3초 후에 result 메시지 지우기
         }
-      } catch (error) {
-        setResult('오류 발생: ' + error.message);
-      } finally {
-        setIsLoading(false);
-        setTimeout(() => setResult(''), 3000); // 3초 후에 result 메시지 지우기
-      }
+      });
     });
   };
 

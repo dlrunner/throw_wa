@@ -23,12 +23,15 @@ class Bookmark(BaseModel):
     type : str
     title : str
 
+class EmailRequest(BaseModel):
+    email: str
+
 @router.get("/record", response_model=List[Bookmark])
 async def get_record(date: str = Query(..., description="The date to filter bookmarks by")):
     try:
         # 메타데이터를 기반으로 검색
         metadata_filter = {"date": date}
-        response = vector_db.search_by_metadata(metadata_filter)
+        response = vector_db.search_by_mine_metadata(metadata_filter)
         data = response["matches"]
         
         bookmarks = [
@@ -39,16 +42,17 @@ async def get_record(date: str = Query(..., description="The date to filter book
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
-@router.get("/recent-week", response_model=List[Bookmark])
-async def recent_week():
+@router.post("/recent-week", response_model=List[Bookmark])
+async def recent_week(request: EmailRequest):
     try:
         today = datetime.utcnow().date()
         last_week_dates = [(today - timedelta(days=i)).isoformat() for i in range(7)]
 
         bookmarks = []
         for date in last_week_dates:
-            metadata_filter = {"date": date}
-            response = vector_db.search_by_metadata(metadata_filter)
+            metadata_filter = {"date": {"$eq": date}, "userId": {"$eq": request.email}}
+            response = vector_db.search_by_mine_metadata(metadata_filter)
+            print(response)
             data = response["matches"]
             for item in data:
                 bookmarks.append(Bookmark(url=item["metadata"]["link"], date=item["metadata"]["date"], type=item['metadata']["type"], title=item['metadata']['title']))

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './ChatBox.css';
 import { FaSearch } from 'react-icons/fa'; // Font Awesome Search Icon yarn add react-icons
-import {ClockLoader} from 'react-spinners'
+import { ClockLoader } from 'react-spinners'
 
 const ChatBox = () => {
   const [messages, setMessages] = useState([]);
@@ -18,33 +18,61 @@ const ChatBox = () => {
     setMessages([]);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_PYTHON_API_URL}/api/search`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text: input, top_k: topK }),
+      getTokenLocal(async function (token) {
+        if (token) {
+          console.log('Token retrieved:', token);
+
+          const responseToken = await fetch(`${import.meta.env.VITE_API_URL}/api/validated_search`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ token: token }),
+          });
+
+          if (!responseToken.ok) {
+            throw new Error('Token validation failed');
+          }
+
+          console.log("responseToken");
+          console.log(responseToken);
+
+          const tokenData = await responseToken.json(); // 응답을 JSON으로 파싱
+          const { email } = tokenData;  // 구조 분해 할당으로 email 추출
+          console.log(email);
+
+          const response = await fetch(`${import.meta.env.VITE_PYTHON_API_URL}/api/search`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ text: input, top_k: topK, email: email }),  // email을 사용
+          });
+
+          if (!response.ok) {
+            throw new Error('데이터를 가져올 수 없습니다.');
+          }
+
+          const data = await response.json();
+          console.log(data);
+          const botMessages = data.matches.map(match => ({
+            text: '링크',
+            sender: 'bot',
+            type: match.type,
+            link: match.link,
+            summary: match.summary,
+            title: match.title,
+            s3OriginalFilename: match.s3OriginalFilename,
+            s3Key: match.s3Key,
+            s3Url: match.s3Url
+          }));
+          console.log(botMessages);
+
+          setMessages(botMessages);
+        } else {
+          console.log('No token found');
+        }
       });
-
-      if (!response.ok) {
-        throw new Error('데이터를 가져올 수 없습니다.');
-      }
-
-      const data = await response.json();
-
-      const botMessages = data.matches.map(match => ({
-        text: '링크',
-        sender: 'bot',
-        type: match.type,
-        link: match.link,
-        summary: match.summary,
-        title: match.title,
-        s3OriginalFilename: match.s3OriginalFilename,
-        s3Key: match.s3Key,
-        s3Url: match.s3Url
-      }));
-
-      setMessages(botMessages);
     } catch (error) {
       console.error('Error:', error);
       setError('데이터를 가져오는데 실패했습니다.');
@@ -96,6 +124,32 @@ const ChatBox = () => {
     }
   };
 
+  // const getTokenChrome = (callback) => {
+  //   chrome.storage.local.get(['jwtToken'], function (result) {
+  //     callback(result.jwtToken);
+  //   });
+  // };
+  const getTokenLocal = (callback) => {
+    if (typeof localStorage !== 'undefined') {
+      const tokenData = localStorage.getItem('jwtToken');
+      if (tokenData) {
+        const currentTime = new Date().getTime();
+        if (currentTime < tokenData.expiryTime) {
+            callback(tokenData.token);
+        } else {
+            localStorage.removeItem('jwtToken');
+            callback(null);
+            console.log('Token has expired');
+        }
+    } else {
+        callback(null);
+    }
+    } else {
+      console.error('localStorage is not available');
+      callback(null);
+    }
+  };
+
   return (
     <div className="chat-box">
       <div className="chat-input-container">
@@ -122,7 +176,7 @@ const ChatBox = () => {
           </button>
         </div>
       </div>
-      {loading && <div className='clock-loader-container'><ClockLoader color="#7289da"size={100}/></div>}
+      {loading && <div className='clock-loader-container'><ClockLoader color="#7289da" size={100} /></div>}
       {error && <div className="error-message">{error}</div>}
       <div className="chat-messages">
         {messages.map((msg, index) => (

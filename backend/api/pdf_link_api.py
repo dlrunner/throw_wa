@@ -13,6 +13,7 @@ from models.summary_text import generate_summary
 from models.keyword_text import keyword_extraction
 from models.title_generate import generate_title # 제목 추출
 import aiofiles # 파일 추출
+from dotenv import load_dotenv
 
 router = APIRouter()
 
@@ -20,10 +21,18 @@ router = APIRouter()
 db_config = DatabaseConfig()
 db = db_config.get_db()
 
+# .env 파일 로드
+load_dotenv()
+
+# 환경 변수 사용
+spring_api_url = os.getenv("SPRING_API_URL")
+
 class PDFUrl(BaseModel):
     url: str  # pdf_path에서 url로 변경
     type : str = "PDF"
     date : str
+    userId: str
+    userName: str
 
 async def download_pdf(pdf_url):
     try:
@@ -47,7 +56,7 @@ async def download_pdf(pdf_url):
         # 파일 내용을 Spring Boot로 전송
         files = {'file': (file_name, file_content)}
         async with httpx.AsyncClient() as client:
-            response = await client.post("http://spring-boot-app:8080/api/upload", files=files)
+            response = await client.post(spring_api_url + "/api/upload", files=files)
             response.raise_for_status()
 
         # Spring Boot에서 반환한 JSON 응답을 파싱
@@ -67,7 +76,8 @@ async def extract_text_from_local_pdf(pdf_url: str) -> str:
     # 파일 프로토콜 제거
     if platform.system() == "Windows":
         if decoded_path.startswith("file:///"):
-            decoded_path = decoded_path[8:].replace("C:/Users/user/Downloads", "/mnt/Downloads")
+            # decoded_path = decoded_path[8:].replace("C:/Users/user/Downloads", "/mnt/Downloads")
+            decoded_path = decoded_path[8:]
     elif platform.system() == "Darwin":  # macOS
         if decoded_path.startswith("file://"):
             decoded_path = decoded_path[7:]
@@ -114,10 +124,12 @@ async def extract_local_pdf(pdf_url: PDFUrl):
         "title" : str(show_title),
         "s3OriginalFilename" : str(s3_info['originalFilename']),
         "s3Key": str(s3_info['key']),
-        "s3Url": str(s3_info['url'])
+        "s3Url": str(s3_info['url']),
+        "userId": pdf_url.userId,
+        "userName": pdf_url.userName
     }
 
-        spring_url = "http://spring-boot-app:8080/api/embeddingS3"
+        spring_url = spring_api_url + "/api/embeddingS3"
         async with httpx.AsyncClient() as client:
             try:
                 spring_response = await client.post(spring_url, json=payload)
@@ -137,7 +149,9 @@ async def extract_local_pdf(pdf_url: PDFUrl):
             "embedding": embedding,
             "s3OriginalFilename" : str(s3_info['originalFilename']),
             "s3Key": str(s3_info['key']),
-            "s3Url": str(s3_info['url'])
+            "s3Url": str(s3_info['url']),
+            "userId": pdf_url.userId,
+            "userName": pdf_url.userName
             }
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))

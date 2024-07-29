@@ -72,6 +72,21 @@ class VectorDatabase:
         except PineconeException as e:
             raise ValueError(f"Failed to search by metadata: {str(e)}")
         
+    def search_by_mine_metadata(self, metadata):
+        try:
+            self.create_index_if_not_exists()
+            # zero vector의 차원을 인덱스의 차원과 일치시키기
+            zero_vector = [0.0] * self.dimension
+            response = self.index.query(
+                vector=zero_vector,
+                top_k=1000,
+                include_metadata=True,
+                filter=metadata
+            )
+            return response
+        except PineconeException as e:
+            raise ValueError(f"Failed to search by metadata: {str(e)}")
+        
     def query_by_metadata(self, metadata_filter: dict):
         try:
             self.create_index_if_not_exists()
@@ -86,9 +101,59 @@ class VectorDatabase:
         except PineconeException as e:
             raise ValueError(f"Failed to query vector: {str(e)}")
         
+    def query_by_mine_metadata(self, email):
+        try:
+            self.create_index_if_not_exists()
+            zero_vector = [0.0] * self.dimension
+            # email 필터링 조건 추가
+            metadata_filter = {"userId": {"$eq": email}}
+            response = self.index.query(
+                vector=zero_vector,
+                top_k=1000,
+                include_metadata=True,
+                filter=metadata_filter
+            )
+            return response
+        except PineconeException as e:
+            raise ValueError(f"Failed to query vector: {str(e)}")
+        
     def get_keyword_rankings(self):
         try:
             response = self.query_by_metadata({})
+            if not response or not response['matches']:
+                return None
+        
+            keyword_counter = Counter()
+            keyword_links = defaultdict(list)
+        
+            for match in response['matches']:
+                keyword = match['metadata'].get('keyword')
+                link = match['metadata'].get('link')
+                title = match['metadata'].get('title')
+                type = match['metadata'].get('type')
+                if keyword:
+                    keyword_counter[keyword] += 1
+                    if link:
+                        keyword_links[keyword].append({
+                            "url" : link,
+                            "title" : title,
+                            "type" : type
+                        })
+            sorted_keywords = keyword_counter.most_common()
+        
+            # 반환할 데이터 구조를 키워드와 링크로 변경
+            keyword_rankings = [
+                {"keyword": keyword, "count": count, "links": keyword_links[keyword]}
+                for keyword, count in sorted_keywords
+            ]
+        
+            return keyword_rankings
+        except Exception as e:
+            raise ValueError(f"키워드 별 랭킹 실패: {str(e)}")
+        
+    def get_mine_keyword_rankings(self, email):
+        try:
+            response = self.query_by_mine_metadata(email)
             if not response or not response['matches']:
                 return None
         
