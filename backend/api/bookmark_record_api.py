@@ -31,7 +31,7 @@ async def get_record(date: str = Query(..., description="The date to filter book
     try:
         # 메타데이터를 기반으로 검색
         metadata_filter = {"date": date}
-        response = vector_db.search_by_metadata(metadata_filter)
+        response = vector_db.search_by_mine_metadata(metadata_filter)
         data = response["matches"]
         
         bookmarks = [
