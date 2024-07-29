@@ -23,32 +23,72 @@ const BottomBox = () => {
     }
     setLoading(true);
     setError(null);
+
     try {
-      const [recentWeekResponse, keywordRankingsResponse] = await Promise.all([
-        fetch(`${import.meta.env.VITE_PYTHON_API_URL}/api/recent-week`),
-        fetch(`${import.meta.env.VITE_PYTHON_API_URL}/api/keyword-rankings`)
-      ]);
+      getToken(async function (token) {
+        if (token) {
+          console.log('Token retrieved:', token);
+          
+          const responseToken = await fetch(`${import.meta.env.VITE_API_URL}/api/validated_search`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ token: token }),
+          });
 
-      if (!recentWeekResponse.ok) {
-        throw new Error('Failed to fetch recent week data');
-      }
-      if (!keywordRankingsResponse.ok) {
-        throw new Error('Failed to fetch keyword rankings');
-      }
+          if (!responseToken.ok) {
+            throw new Error('Token validation failed');
+          }
 
-      const recentWeekData = await recentWeekResponse.json();
-      const keywordRankingsData = await keywordRankingsResponse.json();
+          console.log("responseToken");
+          console.log(responseToken);
 
-      console.log('키워드 데이터 오는지 확인:', keywordRankingsData);
-      console.log('날짜별 데이터 오는지 확인:', recentWeekData);
+          const tokenData = await responseToken.json(); // 응답을 JSON으로 파싱
+          const { email } = tokenData;  // 구조 분해 할당으로 email 추출
+          console.log(email);
 
-      const aggregatedData = aggregateData(recentWeekData);
-      setData(aggregatedData);
-
-      const bestRank = keywordRankingsData.rankings[0];
-      setBestKeyword(bestRank);
-      setRankings(keywordRankingsData.rankings);
-      setVisibleChart(true);
+          const [recentWeekResponse, keywordRankingsResponse] = await Promise.all([
+            fetch(`${import.meta.env.VITE_PYTHON_API_URL}/api/recent-week`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ email: email }),
+            }),
+            fetch(`${import.meta.env.VITE_PYTHON_API_URL}/api/keyword-rankings`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ email: email }),
+            })
+          ]);
+    
+          if (!recentWeekResponse.ok) {
+            throw new Error('Failed to fetch recent week data');
+          }
+          if (!keywordRankingsResponse.ok) {
+            throw new Error('Failed to fetch keyword rankings');
+          }
+    
+          const recentWeekData = await recentWeekResponse.json();
+          const keywordRankingsData = await keywordRankingsResponse.json();
+    
+          console.log('키워드 데이터 오는지 확인:', keywordRankingsData);
+          console.log('날짜별 데이터 오는지 확인:', recentWeekData);
+    
+          const aggregatedData = aggregateData(recentWeekData);
+          setData(aggregatedData);
+    
+          const bestRank = keywordRankingsData.rankings[0];
+          setBestKeyword(bestRank);
+          setRankings(keywordRankingsData.rankings);
+          setVisibleChart(true); // 차트 가시성 설정
+        } else {
+          console.log('No token found');
+        }
+      });
     } catch (error) {
       setError(error.message);
     } finally {
@@ -142,6 +182,12 @@ const BottomBox = () => {
     const maxLength = 50;
     if (text.length <= maxLength) return text;
     return `${text.substring(0, maxLength)}...`;
+  };
+
+  const getToken = (callback) => {
+    chrome.storage.local.get(['jwtToken'], function (result) {
+      callback(result.jwtToken);
+    });
   };
 
   return (
