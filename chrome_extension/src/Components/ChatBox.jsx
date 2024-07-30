@@ -142,7 +142,7 @@ const ChatBox = () => {
       console.error('localStorage is not available');
       callback(null);
     }
-  };
+  }; 
 
   return (
     <div className="chat-box">

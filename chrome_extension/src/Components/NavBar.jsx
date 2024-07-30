@@ -141,7 +141,7 @@ const NavBar = () => {
     const formData = new FormData();
     formData.append('file', file);
 
-    getToken(async function (token) {
+    getTokenLocal(async function (token) {
       if (token) {
         console.log('Token retrieved:', token);
         try {

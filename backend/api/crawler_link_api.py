@@ -4,17 +4,12 @@ from bs4 import BeautifulSoup
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from models.embedding import embed_text  # 임베딩 함수 호출
-from models.summary_text import generate_summary
-from models.keyword_text import keyword_extraction
-from models.title_generate import generate_title # 제목 추출
 from database.database_config import DatabaseConfig
 from database.vector_db import VectorDatabase
-from models.summary_text import generate_summary
-from models.keyword_text import keyword_extraction
-from models.title_generate import generate_title  # 제목 추출
 import httpx
 import os
 from dotenv import load_dotenv
+from models.prompt import gpt_prompt
 
 router = APIRouter()
 
@@ -58,9 +53,8 @@ async def add_bookmark(bookmark: Bookmark):
     id = db.insert_crawling(url, title, content)
     embedding = embed_text(content)
 
-    summary_text = await generate_summary(content)
-    keyword = await keyword_extraction(summary_text)
-    show_title = await generate_title(summary_text)
+    prompt_result = await gpt_prompt(content)
+    print(prompt_result)
 
     payload = {
         "id": str(id),
@@ -68,9 +62,9 @@ async def add_bookmark(bookmark: Bookmark):
         "link": url,
         "type": bookmark.type,
         "date": bookmark.date,
-        "summary": str(summary_text),
-        "keyword": str(keyword),
-        "title": str(show_title),
+        "summary": str(prompt_result["summary"]),
+        "keyword": str(prompt_result["category"]),
+        "title": str(prompt_result["title"]),
         "userId": bookmark.userId,
         "userName": bookmark.userName
     }

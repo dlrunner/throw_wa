@@ -7,11 +7,9 @@ from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel
 from database.database_config import DatabaseConfig
 from models.embedding import embed_text
-from models.summary_text import generate_summary
-from models.keyword_text import keyword_extraction
-from models.title_generate import generate_title
 from dotenv import load_dotenv
 import logging
+from models.prompt import gpt_prompt
 
 router = APIRouter()
 
@@ -87,9 +85,8 @@ async def upload_pdf(request: PDFRequest):
         # 데이터베이스에 저장
         id = db.insert_pdf(request.fileName, extracted_text)
         embedding = embed_text(extracted_text)
-        summary_text = await generate_summary(extracted_text)
-        keyword = await keyword_extraction(summary_text)
-        show_title = await generate_title(summary_text)
+        prompt_result = await gpt_prompt(extracted_text)
+        print(prompt_result)
 
         # PDF 파일을 S3로 업로드
         try:
@@ -105,9 +102,9 @@ async def upload_pdf(request: PDFRequest):
             "link": local_file_path,
             "type": "PDF",
             "date": request.date,
-            "summary": str(summary_text),
-            "keyword": str(keyword),
-            "title": str(show_title),
+            "summary": str(prompt_result["summary"]),
+            "keyword": str(prompt_result["category"]),
+            "title": str(prompt_result["title"]),
             "s3OriginalFilename": str(s3_info['originalFilename']),
             "s3Key": str(s3_info['key']),
             "s3Url": str(s3_info['url']),
@@ -128,9 +125,9 @@ async def upload_pdf(request: PDFRequest):
         return {
             "success": True,
             "text": extracted_text,
-            "summary": summary_text,
-            "title": show_title,
-            "keyword": keyword,
+            "summary": str(prompt_result["summary"]),
+            "keyword": str(prompt_result["category"]),
+            "title": str(prompt_result["title"]),
             "embedding": embedding,
             "s3OriginalFilename": str(s3_info['originalFilename']),
             "s3Key": str(s3_info['key']),

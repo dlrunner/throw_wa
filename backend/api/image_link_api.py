@@ -4,12 +4,10 @@ from models.embedding import imagecaption, embed_text, translate_text  # 번역 
 from database.database_config import DatabaseConfig
 from database.vector_db import VectorDatabase
 import httpx
-from models.summary_text import generate_summary
-from models.keyword_text import keyword_extraction
-from models.title_generate import generate_title # 제목 추출
 import os
 import aiofiles # 파일 추출
 from dotenv import load_dotenv
+from models.prompt import gpt_prompt
 
 router = APIRouter()
 
@@ -80,9 +78,8 @@ async def get_image_embedding_endpoint(request: ImageEmbRequest):
         # 데이터베이스에 결과 저장 (번역된 한국어 캡셔닝만 저장)
         image_id = db.insert_image(request.url, transcaption)
 
-        summary_text = await generate_summary(transcaption)
-        keyword = await keyword_extraction(summary_text)
-        show_title = await generate_title(summary_text)
+        prompt_result = await gpt_prompt(transcaption)
+        print(prompt_result)
 
         try:
             s3_info = await download_img(request.url)
@@ -94,9 +91,9 @@ async def get_image_embedding_endpoint(request: ImageEmbRequest):
             "success": True,
             "image_url": request.url,
             "original_caption": caption,
-            "title": show_title,
-            "요약": summary_text,
-            "keyword": keyword,
+            "summary": str(prompt_result["summary"]),
+            "keyword": str(prompt_result["category"]),
+            "title": str(prompt_result["title"]),
             "translated_caption": transcaption,
             "텍스트 임베딩값": embedding,
             "s3OriginalFilename" : str(s3_info['originalFilename']),
@@ -112,9 +109,9 @@ async def get_image_embedding_endpoint(request: ImageEmbRequest):
             "link": request.url,
             "type": request.type,
             "date": request.date,
-            "summary": str(summary_text),
-            "keyword" : str(keyword),
-            "title" : str(show_title),
+            "summary": str(prompt_result["summary"]),
+            "keyword": str(prompt_result["category"]),
+            "title": str(prompt_result["title"]),
             "s3OriginalFilename" : str(s3_info['originalFilename']),
             "s3Key": str(s3_info['key']),
             "s3Url": str(s3_info['url']),

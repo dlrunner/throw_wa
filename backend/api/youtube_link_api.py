@@ -11,12 +11,10 @@ from database.database_config import DatabaseConfig
 from database.vector_db import VectorDatabase
 import httpx
 from models.embedding import embed_text  # 임베딩 함수 호출
-from models.summary_text import generate_summary
-from models.keyword_text import keyword_extraction
-from models.title_generate import generate_title # 제목 추출
 import openai
 import subprocess
 from dotenv import load_dotenv
+from models.prompt import gpt_prompt
 
 router = APIRouter()
 
@@ -107,9 +105,7 @@ async def transcribe(request: TranscribeRequest):
         result, video_id = process_youtube_link(request.url, request.language)
         embedding = embed_text(result)
 
-        summary_text = await generate_summary(result)
-        keyword = await keyword_extraction(summary_text)
-        show_title = await generate_title(summary_text)
+        prompt_result = await gpt_prompt(result)
 
         payload = {
             "id": str(video_id),
@@ -117,9 +113,9 @@ async def transcribe(request: TranscribeRequest):
             "link": request.url,
             "type": request.type,
             "date": request.date,
-            "summary": str(summary_text),
-            "keyword": str(keyword),
-            "title": str(show_title),
+            "summary": str(prompt_result["summary"]),
+            "keyword": str(prompt_result["category"]),
+            "title": str(prompt_result["title"]),
             "userId": request.userId,
             "userName": request.userName
         }
@@ -137,9 +133,9 @@ async def transcribe(request: TranscribeRequest):
         return {
             "success": True,
             "content": result,
-            "요약": summary_text,
-            "title": show_title,
-            "keyword": keyword,
+            "요약": str(prompt_result["summary"]),
+            "keyword": str(prompt_result["category"]),
+            "title": str(prompt_result["title"]),
             "video_id": video_id,
             "embedding": embedding,
             "type": request.type,
