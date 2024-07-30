@@ -90,9 +90,9 @@ async def extract_pdf_text(pdf_url: PDFUrl):
             "summary": str(summary_text),
             "keyword": str(keyword),
             "title": str(show_title),
-            "s3OriginalFilename": str(s3_info['originalFilename']),
-            "s3Key": str(s3_info['key']),
-            "s3Url": str(s3_info['url']),
+            "s3OriginalFilename": s3_info.get('originalFilename', ''),
+            "s3Key": s3_info.get('key', ''),
+            "s3Url": s3_info.get('url', ''),
             "userId": pdf_url.userId,
             "userName": pdf_url.userName
         }
@@ -110,13 +110,13 @@ async def extract_pdf_text(pdf_url: PDFUrl):
         return {
             "success": True,
             "text": extracted_text,
-            "요약": summary_text,
+            "summary": summary_text,
             "title": show_title,
             "keyword": keyword,
             "embedding": embedding,
-            "s3OriginalFilename": str(s3_info['originalFilename']),
-            "s3Key": str(s3_info['key']),
-            "s3Url": str(s3_info['url']),
+            "s3OriginalFilename": s3_info.get('originalFilename', ''),
+            "s3Key": s3_info.get('key', ''),
+            "s3Url": s3_info.get('url', ''),
             "userId": pdf_url.userId,
             "userName": pdf_url.userName
         }
