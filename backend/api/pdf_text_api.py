@@ -94,7 +94,7 @@ async def extract_pdf_text(pdf_url: PDFUrl):
             "userName": pdf_url.userName
         }
 
-        spring_url = spring_api_url + "/api/embeddingS3"
+        spring_url = spring_api_url + "/api/embedding"
         async with httpx.AsyncClient() as client:
             try:
                 spring_response = await client.post(spring_url, json=payload)
