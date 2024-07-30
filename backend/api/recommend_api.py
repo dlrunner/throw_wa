@@ -15,7 +15,6 @@ vector_db = VectorDatabase(
     index_name="throw-wa",
     dimension=384
 )
-
 @router.post("/keyword-rankings")
 async def get_keyword_rankings(request: EmailRequest):
     try:

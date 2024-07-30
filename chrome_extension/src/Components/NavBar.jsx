@@ -16,9 +16,10 @@ const NavBar = () => {
   const [fade, setFade] = useState(false);
   const [file, setFile] = useState(null);
   const [isPdfUploadMode, setIsPdfUploadMode] = useState(false);
+  const username = localStorage.getItem('username')
 
   useEffect(() => {
-    const headings = ['Throw-wa Service', '회원님들의 시간은 소중하니까..', '생각나는 키워드를 입력해보세요!'];
+    const headings = ['Throw-wa Service', `${username}님의 시간은 소중하니까..`, '생각나는 키워드를 입력해보세요!'];
     let index = 0;
 
     const interval = setInterval(() => {
