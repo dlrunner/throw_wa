@@ -90,9 +90,6 @@ async def extract_pdf_text(pdf_url: PDFUrl):
             "summary": str(summary_text),
             "keyword": str(keyword),
             "title": str(show_title),
-            "s3OriginalFilename": s3_info.get('originalFilename', ''),
-            "s3Key": s3_info.get('key', ''),
-            "s3Url": s3_info.get('url', ''),
             "userId": pdf_url.userId,
             "userName": pdf_url.userName
         }
@@ -114,9 +111,6 @@ async def extract_pdf_text(pdf_url: PDFUrl):
             "title": show_title,
             "keyword": keyword,
             "embedding": embedding,
-            "s3OriginalFilename": s3_info.get('originalFilename', ''),
-            "s3Key": s3_info.get('key', ''),
-            "s3Url": s3_info.get('url', ''),
             "userId": pdf_url.userId,
             "userName": pdf_url.userName
         }
@@ -125,7 +119,4 @@ async def extract_pdf_text(pdf_url: PDFUrl):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# call_pdf 함수 정의
-async def call_pdf(link: str):
-    request = PDFUrl(url=link)
-    return await extract_pdf_text(request)
+
