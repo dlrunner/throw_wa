@@ -12,7 +12,7 @@ import httpx
 from models.summary_text import generate_summary
 from models.keyword_text import keyword_extraction
 from models.title_generate import generate_title # 제목 추출
-import aiofiles # 파일 추출
+import aiofiles  # 파일 추출
 from dotenv import load_dotenv
 
 router = APIRouter()
@@ -29,8 +29,8 @@ spring_api_url = os.getenv("SPRING_API_URL")
 
 class PDFUrl(BaseModel):
     url: str  # pdf_path에서 url로 변경
-    type : str = "PDF"
-    date : str
+    type: str = "PDF"
+    date: str
     userId: str
     userName: str
 
@@ -48,10 +48,10 @@ async def download_pdf(pdf_url: str) -> str:
     except httpx.HTTPError as e:
         raise HTTPException(status_code=500, detail=f"PDF 다운로드 중 오류 발생: {e}")
 
-async def extract_text_from_pdf(pdf_path: str) -> str:
+def extract_text_from_pdf(pdf_path: str) -> str:
     try:
-        async with aiofiles.open(pdf_path, 'rb') as file:
-            reader = PyPDF2.PdfReader(await file.read())
+        with open(pdf_path, 'rb') as file:
+            reader = PyPDF2.PdfReader(file)
             text = ""
             for page in reader.pages:
                 text += page.extract_text()
@@ -67,7 +67,7 @@ async def extract_pdf_text(pdf_url: PDFUrl):
         downloaded_pdf_path = await download_pdf(pdf_url.url)
         
         # 텍스트 추출
-        extracted_text = await extract_text_from_pdf(downloaded_pdf_path)
+        extracted_text = extract_text_from_pdf(downloaded_pdf_path)
         
         # DB에 PDF 저장 및 임베딩
         id = db.insert_pdf(pdf_url.url, extracted_text)
@@ -83,14 +83,14 @@ async def extract_pdf_text(pdf_url: PDFUrl):
 
         payload = {
             "id": str(id),
-            "embedding" : embedding,
-            "link" : pdf_url.url,
-            "type" : pdf_url.type,
-            "date" : pdf_url.date,
+            "embedding": embedding,
+            "link": pdf_url.url,
+            "type": pdf_url.type,
+            "date": pdf_url.date,
             "summary": str(summary_text),
-            "keyword" : str(keyword),
-            "title" : str(show_title),
-            "s3OriginalFilename" : str(s3_info['originalFilename']),
+            "keyword": str(keyword),
+            "title": str(show_title),
+            "s3OriginalFilename": str(s3_info['originalFilename']),
             "s3Key": str(s3_info['key']),
             "s3Url": str(s3_info['url']),
             "userId": pdf_url.userId,
@@ -112,9 +112,9 @@ async def extract_pdf_text(pdf_url: PDFUrl):
             "text": extracted_text,
             "요약": summary_text,
             "title": show_title,
-            "keyword" : keyword,
+            "keyword": keyword,
             "embedding": embedding,
-            "s3OriginalFilename" : str(s3_info['originalFilename']),
+            "s3OriginalFilename": str(s3_info['originalFilename']),
             "s3Key": str(s3_info['key']),
             "s3Url": str(s3_info['url']),
             "userId": pdf_url.userId,
