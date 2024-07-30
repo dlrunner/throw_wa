@@ -37,7 +37,7 @@ const SignUp = () => {
         }
       ).then(() => {
         alert(`회원가입이 완료되었습니다. ${name}님`);
-        navigate("/home");
+        navigate("/login");
       });
     } catch (error) {
       console.error("Error:", error);

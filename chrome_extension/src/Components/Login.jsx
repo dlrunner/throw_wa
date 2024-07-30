@@ -25,15 +25,16 @@ const LoginForm = () => {
     });
   };
 
-  // const saveTokenChrome = (token) => {
-  //   if (typeof chrome !== 'undefined' && chrome.storage) {
-  //     chrome.storage.local.set({ jwtToken: token }, function () {
-  //       console.log('Token is saved');
-  //     });
-  //   } else {
-  //     console.error('chrome.storage is not available');
-  //   }
-  // };
+  const saveTokenChrome = (token) => {
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      chrome.storage.local.set({ jwtToken: token }, function () {
+        console.log('Token is saved');
+      });
+    } else {
+      console.error('chrome.storage is not available');
+    }
+  };
+
   const saveTokenLocal = (token) => {
     const expiresIn = 24 * 3600; // 1일 = 24시간 * 3600초
     const expiryTime = new Date().getTime() + expiresIn * 1000; // expiresIn은 초 단위
@@ -61,13 +62,18 @@ const LoginForm = () => {
       }
     )
       .then(response => {
+        localStorage.setItem('username', response.data.username)
         console.log("response:", response);
+        const token = response.data.token
         saveTokenLocal(response.data.token);
+        saveTokenChrome(token)
+        alert('로그인 되었습니다.')
 
         navigate("/home");
       })
       .catch(error => {
         console.error("Error:", error);
+        alert('등록된 회원이 아닙니다.')
       });
   };
 

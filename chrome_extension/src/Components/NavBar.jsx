@@ -102,13 +102,16 @@ const NavBar = () => {
   const handleUrlSave = async () => {
     setIsLoading(true);
 
+    getTokenLocal(async function (token){
+      if(token){
+        console.log('Token retrieved:', token);
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/url`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url: url }),
+        body: JSON.stringify({ url: url, token: token }),
       });
 
       if (!response.ok) {
@@ -130,6 +133,13 @@ const NavBar = () => {
       setUrl(''); // URL 입력값 초기화
       setTimeout(() => setResult(''), 3000); // 3초 후에 result 메시지 지우기
     }
+    } else {
+    console.log('No token found');
+    setIsLoading(false);
+    setResult('토큰을 찾을 수 없습니다.');
+    setTimeout(() => setResult(''), 3000); // 3초 후에 result 메시지 지우기
+    }
+    })
   };
 
   const handleFileUpload = async (event) => {
@@ -159,7 +169,7 @@ const NavBar = () => {
 
           const data = await response.json();
           if (data.success) {
-            setResult('파일이 성공적으로 업로드되었습니다!');
+            setResult('throw-wa에 저장되었습니다!');
           } else {
             throw new Error(data.message || '처리 실패');
           }

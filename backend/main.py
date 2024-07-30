@@ -11,6 +11,7 @@ from api.image_link_api import router as image_router
 from api.upsert_api import router as upsert_router
 from api.bookmark_record_api import router as record_router
 from api.recommend_api import router as recommend_router
+from api.pdf_text_api import router as pdf_text_router
 
 
 
@@ -34,6 +35,7 @@ app.include_router(image_router, prefix="/api")
 app.include_router(upsert_router, prefix="/api")
 app.include_router(record_router, prefix="/api")
 app.include_router(recommend_router, prefix="/api")
+app.include_router(pdf_text_router, prefix="/api")
 
 @app.get('/wa')
 async def sanz():
