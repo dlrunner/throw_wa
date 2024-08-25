@@ -26,7 +26,8 @@ app.add_middleware(
     allow_headers=['*']
 )
 
-app.include_router(youtube_router, prefix="/api")
+app.include
+pdf_router(youtube_router, prefix="/api")
 app.include_router(pdf_router, prefix="/api")
 app.include_router(crawler_router, prefix="/api")
 app.include_router(search_router, prefix="/api")
